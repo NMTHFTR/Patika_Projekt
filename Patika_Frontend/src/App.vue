@@ -10,6 +10,9 @@
           <RouterLink to="/inventory"
             style="text-decoration:none;padding:8px 12px;border:1px solid #30435f;border-radius:10px; font-size: 1rem;">
             Leltár</RouterLink>
+          <RouterLink to="/projects"
+            style="text-decoration:none;padding:8px 12px;border:1px solid #30435f;border-radius:10px; font-size: 1rem;">
+            Projektek</RouterLink>
         </div>
       </div>
     </div>

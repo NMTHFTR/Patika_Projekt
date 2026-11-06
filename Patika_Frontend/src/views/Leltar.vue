@@ -96,6 +96,7 @@
               <th>Tároló</th>
               <th>Státusz</th>
               <th>Projekt</th>
+              <th style="width: 100px; text-align: center;">Részletek</th>
             </tr>
           </thead>
           <tbody>
@@ -111,6 +112,15 @@
                 </span>
               </td>
               <td>{{ item.ProjectName || '–' }}</td>
+              <td style="text-align: center;">
+                <RouterLink 
+                  :to="'/inventory/' + item.PartId" 
+                  class="btn primary" 
+                  style="padding: 4px 10px; font-size: 12px; display: inline-block; text-decoration: none;"
+                >
+                  Megnyitás
+                </RouterLink>
+              </td>
             </tr>
           </tbody>
         </table>
@@ -163,6 +173,7 @@
 import { ref, computed } from 'vue'
 // Bekötjük az assets mappába kiszervezett új CSS-t
 import '../assets/leltar.css'
+import { RouterLink } from 'vue-router'
 
 // Kezdő adatok gyógyszerészeti köntösben (Mock adatok)
 const parts = ref([
