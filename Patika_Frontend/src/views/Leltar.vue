@@ -170,20 +170,23 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import { RouterLink } from 'vue-router'
+import axios from 'axios'
 // Bekötjük az assets mappába kiszervezett új CSS-t
 import '../assets/leltar.css'
-import { RouterLink } from 'vue-router'
 
-// Kezdő adatok gyógyszerészeti köntösben (Mock adatok)
-const parts = ref([
-  { PartId: 101, Barcode: '599123456', Name: 'Algoflex Forte', Category: 'Fájdalomcsillapító', Location: 'A polc', ProjectName: 'Sebészet', selected: false },
-  { PartId: 102, Barcode: '599987654', Name: 'Augmentin Duo', Category: 'Antibiotikum', Location: 'Hűtő', ProjectName: '', selected: false },
-  { PartId: 103, Barcode: '599555444', Name: 'C-Vitamin 1000mg', Category: 'Vitamin', Location: 'B polc', ProjectName: 'Belgyógyászat', selected: false },
-  { PartId: 104, Barcode: '599333222', Name: 'Neo Citran por', Category: 'Lázcsillapító', Location: 'A polc', ProjectName: '', selected: false }
-])
+// A lista üresen indul, mert a Python backendből töltjük fel
+const parts = ref([])
 
-// Új elem űrlap reaktív állapota
+// KPI-ok reaktív állapota
+const kpis = ref({
+  AllCnt: 0,
+  FreeCnt: 0,
+  AssignedCnt: 0
+})
+
+// Új tétel űrlap reaktív állapota
 const newItem = ref({ barcode: '', name: '', category: '', location: '' })
 const statusMessage = ref('')
 
@@ -193,23 +196,39 @@ const filterCategory = ref('')
 const filterStatus = ref('')
 const selectedAssignProject = ref('')
 
-// KPI számítások dinamikusan az adatok alapján
-const kpiAll = computed(() => parts.value.length)
-const kpiFree = computed(() => parts.value.filter(p => !p.ProjectName).length)
-const kpiAssigned = computed(() => parts.value.filter(p => p.ProjectName).length)
+// Dinamikus KPI számítások a Pythonból kapott adatok alapján
+const kpiAll = computed(() => kpis.value.AllCnt)
+const kpiFree = computed(() => kpis.value.FreeCnt)
+const kpiAssigned = computed(() => kpis.value.AssignedCnt)
 
-// Kereső és szűrő logika
-const filteredParts = computed(() => {
-  return parts.value.filter(p => {
-    const matchesSearch = p.Name.toLowerCase().includes(searchQuery.value.toLowerCase()) || 
-                          p.Barcode.includes(searchQuery.value)
-    const matchesCategory = !filterCategory.value || p.Category === filterCategory.value
-    const matchesStatus = !filterStatus.value || 
-                          (filterStatus.value === 'free' && !p.ProjectName) || 
-                          (filterStatus.value === 'assigned' && p.ProjectName)
-    return matchesSearch && matchesCategory && matchesStatus
-  })
+// 1. FUNKCIÓ: Adatok betöltése a Python backendből
+const loadDataFromBackend = async () => {
+  try {
+    // Lekérjük a gyógyszereket a Python szervertől (figyelembe véve a szűrőket is)
+    const partsResponse = await axios.get('http://localhost:8000/api/parts', {
+      params: {
+        search: searchQuery.value,
+        category: filterCategory.value,
+        status: filterStatus.value
+      }
+    })
+    parts.value = partsResponse.data.map(p => ({ ...p, selected: false }))
+
+    // Lekérjük a friss KPI számokat is a Pythonból
+    const kpisResponse = await axios.get('http://localhost:8000/api/kpis')
+    kpis.value = kpisResponse.data
+  } catch (error) {
+    console.error("Hiba történt a backend lekérdezése közben:", error)
+  }
+}
+
+// Amikor az oldal betöltődik a böngészőben, azonnal lekérjük az adatokat a Pythonból
+onMounted(() => {
+  loadDataFromBackend()
 })
+
+// Kereső és szűrő változásakor azonnal újra lekérdezünk a Pythonból
+const filteredParts = computed(() => parts.value)
 
 // Gyűjtőtér elemei (amik bal oldalon ki vannak pipálva)
 const binItems = computed(() => parts.value.filter(p => p.selected))
@@ -218,34 +237,37 @@ const selectedCount = computed(() => binItems.value.length)
 
 // Összes kijelölése / kijelölés megszüntetése
 const toggleAllSelection = (event) => {
-  filteredParts.value.forEach(p => p.selected = event.target.checked)
+  parts.value.forEach(p => p.selected = event.target.checked)
 }
 
-// Funkció: Új tétel felvétele
-const addNewItem = () => {
+// 2. FUNKCIÓ: Új tétel küldése a Python backendnek (adatbázisba mentés)
+const addNewItem = async () => {
   if (!newItem.value.name) {
     statusMessage.value = 'A tétel nevének kitöltése kötelező!'
     return
   }
-  parts.value.push({
-    PartId: Date.now(),
-    Barcode: newItem.value.barcode,
-    Name: newItem.value.name,
-    Category: newItem.value.category || 'Egyéb',
-    Location: newItem.value.location || 'Raktár 1',
-    ProjectName: '',
-    selected: false
-  })
-  statusMessage.value = 'Sikeresen hozzáadva!'
-  clearNewItem()
-  setTimeout(() => statusMessage.value = '', 3000)
+  try {
+    await axios.post('http://localhost:8000/api/parts', {
+      barcode: newItem.value.barcode,
+      name: newItem.value.name,
+      category: newItem.value.category,
+      location: newItem.value.location
+    })
+    statusMessage.value = 'Sikeresen elmentve a Python adatbázisba!'
+    clearNewItem()
+    loadDataFromBackend() // Újratöltjük a listát a friss adattal
+    setTimeout(() => statusMessage.value = '', 3000)
+  } catch (error) {
+    statusMessage.value = 'Hiba történt a mentés során.'
+    console.error(error)
+  }
 }
 
 const clearNewItem = () => {
   newItem.value = { barcode: '', name: '', category: '', location: '' }
 }
 
-// Funkció: Kijelöltek hozzárendelése projekthez
+// Ideiglenes lokális funkciók a többi gombhoz (ezeket a backend funkciók bővülésével lehet majd átírni)
 const assignSelectedToProject = () => {
   if (!selectedAssignProject.value) {
     alert('Kérlek válassz ki egy osztályt / projektet!')
