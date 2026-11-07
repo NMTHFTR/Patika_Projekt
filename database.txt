@@ -1,0 +1,41 @@
+from __future__ import annotations
+
+import os
+from contextlib import contextmanager
+from typing import Any, Generator, Optional
+
+import pyodbc
+
+
+def connect_database(conn_str: Optional[str] = None) -> Any:
+    """Connect to the Patika SQL Server database."""
+    connection_string = conn_str or os.getenv("PATIKA_DB_CONNECTION_STRING")
+    if not connection_string:
+        driver = os.getenv("PATIKA_DB_DRIVER", "ODBC Driver 17 for SQL Server")
+        server = os.getenv("PATIKA_DB_SERVER", r"localhost\SQLEXPRESS")
+        database = os.getenv("PATIKA_DB_NAME", "Patika raktárkezelő")
+        user = os.getenv("PATIKA_DB_USER")
+        password = os.getenv("PATIKA_DB_PASSWORD")
+
+        parts = [
+            f"Driver={{{driver}}}",
+            f"Server={server}",
+            f"Database={database}",
+        ]
+        if user:
+            parts.extend((f"UID={user}", f"PWD={password or ''}"))
+        else:
+            parts.append("Trusted_Connection=yes")
+        connection_string = ";".join(parts) + ";"
+
+    return pyodbc.connect(connection_string)
+
+
+@contextmanager
+def database_connection(conn_str: Optional[str] = None) -> Generator[Any, None, None]:
+    connection = connect_database(conn_str)
+    try:
+        with connection:
+            yield connection
+    finally:
+        connection.close()
