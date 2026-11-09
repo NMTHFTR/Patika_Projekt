@@ -2,14 +2,7 @@
 <template>
   <div class="wrap">
     <!-- Felső KPI rész -->
-    <div class="header">
-      <div></div>
-      <div class="kpis">
-        <div class="kpi"><div class="big">{{ kpis.StockCnt || 0 }}</div><div class="sub">Összes doboz</div></div>
-        <div class="kpi"><div class="big">{{ kpis.ExpiredBatchCnt || 0 }}</div><div class="sub">Lejárt tételek</div></div>
-        <div class="kpi"><div class="big">{{ kpis.OutOfStockBatchCnt || 0 }}</div><div class="sub">Hiánycikk (0 db)</div></div>
-      </div>
-    </div>
+
 
     <!-- A TE EREDETI ÚRLAPOD (Megmaradt változtatás nélkül) -->
     <div class="panel" style="margin-bottom: 16px">
@@ -28,14 +21,15 @@
             <td><input type="text" v-model="newItem.barcode" placeholder="Szkennelj vagy gépelj..." /></td>
             <td><input type="text" v-model="newItem.name" placeholder="Gyógyszer vagy eszköz neve" /></td>
             <td>
-              <select v-model="newItem.category">
-                <option value="">– válassz –</option>
-                <option value="Fájdalomcsillapító">Fájdalomcsillapító</option>
-                <option value="Antibiotikum">Antibiotikum</option>
-                <option value="Vitamin">Vitamin</option>
-                <option value="Lázcsillapító">Lázcsillapító</option>
-                <option value="Egyéb">Egyéb</option>
-              </select>
+             <select v-model="newItem.category">
+  <!-- Egy alapértelmezett, nem kiválasztható opció, hogy szép legyen -->
+  <option value="" disabled>Válassz kategóriát...</option>
+
+  <!-- Ugyanaz a tömb adja az adatokat, amit a szűrőnél is használtál -->
+  <option v-for="category in categories" :key="category" :value="category">
+    {{ category }}
+  </option>
+</select>
             </td>
             <td>
               <select v-model="newItem.location">
@@ -64,17 +58,18 @@
           <label>Keresés</label>
           <input type="text" v-model="searchQuery" @input="loadDataFromBackend" placeholder="Keresés név vagy vonalkód alapján..." />
         </div>
-        <div class="stack" style="grid-column: span 3">
-          <label>Kategória</label>
-          <select v-model="filterCategory" @change="loadDataFromBackend">
-            <option value="">Összes kategória</option>
-            <option value="Fájdalomcsillapító">Fájdalomcsillapító</option>
-            <option value="Antibiotikum">Antibiotikum</option>
-            <option value="Vitamin">Vitamin</option>
-            <option value="Lázcsillapító">Lázcsillapító</option>
-            <option value="Egyéb">Egyéb</option>
-          </select>
-        </div>
+       <div class="stack" style="grid-column: span 3">
+  <label>Kategória</label>
+  <select v-model="filterCategory" @change="loadDataFromBackend">
+
+    <option value="">Összes kategória</option>
+
+
+    <option v-for="category in categories" :key="category" :value="category">
+      {{ category }}
+    </option>
+  </select>
+</div>
         <div class="stack" style="grid-column: span 3">
           <label>Készlet státusz</label>
           <select v-model="filterStatus" @change="loadDataFromBackend">
@@ -115,9 +110,9 @@
             </td>
             <td style="text-align: center;">
               <!-- JAVÍTOTT LINK: Most már a valódi termékazonosítót (ProductId) küldi el a megnyitáshoz -->
-              <RouterLink 
-                :to="'/inventory/' + item.PartId" 
-                class="btn primary" 
+              <RouterLink
+                :to="'/inventory/' + item.PartId"
+                class="btn primary"
                 style="padding: 4px 10px; font-size: 12px; display: inline-block; text-decoration: none;"
               >
                 Megnyitás
@@ -179,7 +174,11 @@ const loadDataFromBackend = async () => {
 
 onMounted(() => {
   loadDataFromBackend()
+  loadCategories()
 })
+
+
+const categories = ref([])
 
 const toggleAllSelection = (event) => {
   parts.value.forEach(p => p.selected = event.target.checked)
@@ -194,4 +193,17 @@ const addNewItem = () => {
   statusMessage.value = 'Űrlap mentésre kész!'
   setTimeout(() => statusMessage.value = '', 3000)
 }
+
+
+const loadCategories = async () => {
+  try {
+    const response = await axios.get('http://localhost:8000/api/categories')
+    categories.value = response.data
+  } catch (error) {
+    console.error('Hiba a kategóriák betöltésekor:', error)
+  }
+}
+
+
+
 </script>

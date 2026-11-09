@@ -17,7 +17,12 @@
         <!-- BAL OLDAL (5 oszlop): Kép -->
         <div class="image-box">
           <!-- Ha nincs kép, egy szürke doboz jelenik meg helyette -->
-          <img v-if="product.imageUrl" :src="product.imageUrl" alt="Termék képe" class="product-image" />
+         <img
+            v-if="product.Barcode"
+            :src="`/fotok/${product.Barcode}.jpg`"
+            alt="Termék képe"
+            class="product-image"
+          />
           <div v-else class="no-image">Nincs feltöltött kép</div>
         </div>
 
@@ -128,7 +133,7 @@ const formatDate = (dateStr: string) => {
 onMounted(async () => {
   try {
     const response = await axios.get(`http://localhost:8000/api/parts/${currentBarcode.value}`)
-    
+
     // Feltöltjük az interfészt a Pythonból kapott adatokkal
     product.value = {
       ...response.data,

@@ -349,6 +349,14 @@ def get_part_by_id(id):
         return jsonify({"error": str(e)}), 500
 
 
+
+@app.get("/api/categories")
+def get_categories():
+    inv = Inv()
+    return inv.bind_categories()
+
 if __name__ == "__main__":
     app.run(host="localhost", port=8000, debug=True)
+    
+    
 
