@@ -150,8 +150,14 @@ const statusMessage = ref('')
 
 const formatDate = (dateStr) => {
   if (!dateStr) return '–'
-  return dateStr.split('T')[0]
+  const d = new Date(dateStr)
+  return d.toLocaleDateString('hu-HU', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  })
 }
+
 
 // Keresés és szűrés bekötése az Azure-ba
 const loadDataFromBackend = async () => {
