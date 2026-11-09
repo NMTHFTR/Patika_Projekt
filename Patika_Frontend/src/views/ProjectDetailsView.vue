@@ -8,7 +8,7 @@
         <button class="btn ghost" @click="goBack">
           &larr; Vissza a leltárhoz
         </button>
-        <div class="brand" style="color: var(--muted); font-size: 16px;">Termék adatlapja</div>
+        <div class="brand" style="color: var(--muted); font-size: 20px;">Termék adatlapja</div>
       </div>
 
       <!-- 12 Oszlopos Grid Felosztás -->
@@ -25,21 +25,39 @@
         <div class="details-box">
           <div class="section-title">Termék információk</div>
 
-          <h1 class="product-name">{{ product.name }}</h1>
-
-          <div style="margin-bottom: 16px;">
-            <span class="tag blue">Vonalkód: {{ product.barcode }}</span>
+          <div style="color: var(--muted); font-size: 20px; text-transform: uppercase; letter-spacing: 1px;">
+            {{ product.Brand }}
           </div>
 
-          <p class="product-desc">{{ product.description }}</p>
+          <h1 class="product-name">{{ product.Name }}</h1>
+
+
+
+          <div style="margin-bottom: 16px;">
+            <span class="tag blue", style="font-size: 14px;">Vonalkód: {{ product.Barcode }}</span>
+            <span :style="{
+              backgroundColor: product.IsPrescription ? '#ef4444' : '#22c55e',
+              color: 'white',
+              padding: '4px 8px',
+              borderRadius: '6px',
+              fontSize: '14px',
+              fontWeight: 'bold'
+            }">
+              {{ product.IsPrescription ? 'Vényköteles (Rx)' : 'Vény nélkül kapható' }}
+            </span>
+          </div>
+
+          <p class="product-desc">{{ product.Description }}</p>
 
           <!-- Extra statisztikák a termékhez az eredeti dizájnnal -->
           <div class="kpis" style="margin-top: 24px;">
-            <div class="kpi">Kategória<div class="big">{{ product.category }}</div>
+            <div class="kpi">Kategória<div class="big">{{ product.Category }}</div>
             </div>
-            <div class="kpi">Helyzet<div class="big">{{ product.location }}</div>
+            <div class="kpi">Tároló<div class="big">{{ product.Location }}</div>
             </div>
-            <div class="kpi">Készlet<div class="big">{{ product.stock }} db</div>
+            <div class="kpi">Készlet<div class="big">{{ product.Quantity }} db</div>
+            </div>
+            <div class="kpi">Lejárati idő<div class="big">{{ product.ExpiryDate }}</div>
             </div>
           </div>
         </div>
@@ -52,35 +70,47 @@
 
 
 <!-- 2. TYPESCRIPT LOGIKA -->
+<!-- 2. TYPESCRIPT LOGIKA -->
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import axios from 'axios'
 
 const route = useRoute()
 const router = useRouter()
 
-// Kiolvassuk az URL-ből az ID-t (vonalkódot)
+// Kiolvassuk az URL-ből az ID-t (vonalkódot / sarzsot)
 const currentBarcode = ref(route.params.id as string)
 
-// Adatszerkezet a termékhez
+// Adatszerkezet a termékhez (igazítva az inv.py get_parts_by_ids formátumához)
 interface ProductDetail {
-  name: string
-  barcode: string
-  category: string
-  location: string
-  stock: number
-  description: string
+  PartId: string
+  Barcode: string
+  Name: string
+  Category: string
+  Location: string
+  ExpiryDate: string
+  ProductId: number
+  Quantity: number
+  Description: string
   imageUrl: string
+  Brand: string
+  IsPrescription: boolean
 }
 
 const product = ref<ProductDetail>({
-  name: 'Betöltés alatt...',
-  barcode: '',
-  category: '',
-  location: '',
-  stock: 0,
-  description: '',
-  imageUrl: ''
+  PartId: '',
+  Barcode: '',
+  Name: 'Betöltés alatt...',
+  Category: '',
+  Location: '',
+  ExpiryDate: '',
+  ProductId: 0,
+  Quantity: 0,
+  Description: 'A termék leírása hamarosan elérhető a központi adatbázisból.',
+  imageUrl: '',
+  Brand: '',
+  IsPrescription: false
 })
 
 // Visszalépés az előző oldalra
@@ -88,21 +118,30 @@ const goBack = () => {
   router.back()
 }
 
-// Oldal betöltésekor "lekérjük" az adatokat
-onMounted(() => {
-  // Szimulált backend válasz a currentBarcode.value alapján
-  product.value = {
-    name: 'Algoflex Forte Dolo 400mg filmtabletta',
-    barcode: currentBarcode.value,
-    category: 'Fájdalomcsillapító',
-    location: 'A Raktár, 3. sor',
-    stock: 45,
-    description: 'Enyhe és közepesen erős fájdalom, például fejfájás, fogfájás, menstruációs fájdalom csillapítására, valamint lázcsillapításra alkalmazható gyógyszerkészítmény. Hatóanyaga az ibuprofén.',
-    // Helyettesítő kép generálása a teszteléshez
-    imageUrl: 'https://placehold.co/500x500/0b1220/3b82f6?text=Gyogyszer+Kepe'
+// Dátum formázó segédfüggvény
+const formatDate = (dateStr: string) => {
+  if (!dateStr) return '–'
+  return dateStr.split('T')[0]
+}
+
+// Oldal betöltésekor ténylegesen lekérjük az adatokat az Azure felhőből
+onMounted(async () => {
+  try {
+    const response = await axios.get(`http://localhost:8000/api/parts/${currentBarcode.value}`)
+    
+    // Feltöltjük az interfészt a Pythonból kapott adatokkal
+    product.value = {
+      ...response.data,
+      // JAVÍTOTT LINK (Hozzáadva a / perjel, hogy betöltsön a tesztkép)
+      imageUrl: 'https://placehold.co' + encodeURIComponent(response.data.Name || 'Gyogyszer')
+    }
+  } catch (error) {
+    console.error("Hiba a gyógyszer részleteinek letöltésekor:", error)
+    product.value.Name = "Hiba történt az adatok letöltésekor."
   }
 })
 </script>
+
 
 
 <!-- 3. CSS (Csak erre a komponensre ható dizájn) -->

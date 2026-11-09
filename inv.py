@@ -117,14 +117,19 @@ class Inv:
                 CONCAT(RTRIM(product.T_sor), ' / ', RTRIM(product.T_polc)) AS Location,
                 stock.T_lejaratdatum AS ExpiryDate,
                 stock.T_ID AS ProductId,
-                stock.T_db AS Quantity
+                stock.T_db AS Quantity,
+                product.T_marka AS Brand,
+                product.T_veny AS IsPrescription,
+                product.T_leiras AS Description
             FROM dbo.[Konkrét termék] AS stock
             INNER JOIN dbo.[Termék jellemzők] AS product ON product.T_ID = stock.T_ID
             WHERE stock.T_kod IN ({placeholders})
         """
         with self.get_connection() as cn:
-            return [
-                {
+            results = []  # <-- Itt lett javítva a hiányzó zárójel!
+            cursor = cn.cursor()
+            for row in cursor.execute(sql, batch_codes):
+                results.append({
                     "PartId": row.PartId,
                     "Barcode": row.Barcode,
                     "Name": row.Name,
@@ -133,9 +138,11 @@ class Inv:
                     "ExpiryDate": row.ExpiryDate,
                     "ProductId": row.ProductId,
                     "Quantity": row.Quantity,
-                }
-                for row in cn.cursor().execute(sql, batch_codes)
-            ]
+                    "Brand": row.Brand.strip() if row.Brand else "Ismeretlen gyártó",
+                    "IsPrescription": bool(row.IsPrescription),
+                    "Description": row.Description.strip() if row.Description else "Nincs leírás feltöltve ehhez a termékhez."
+                })
+            return results
 
     def load_kpis(self) -> Dict[str, int]:
         sql = """
@@ -328,6 +335,19 @@ def add_part():
         return jsonify({"message": "Sikeres hozzáadás"}), 201
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+@app.route('/api/parts/<id>', methods=['GET'])
+def get_part_by_id(id):
+    try:
+        # A csapattársad által írt függvény listát vár, ezért listába rakjuk az ID-t
+        result = service.get_parts_by_ids([id])
+        if not result or len(result) == 0:
+            return jsonify({"error": "A gyógyszer nem található"}), 404
+        # Mivel a get_parts_by_ids listát ad vissza, kiszedjük belőle az első elemet
+        return jsonify(result[0])
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 
 if __name__ == "__main__":
     app.run(host="localhost", port=8000, debug=True)
