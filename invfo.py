@@ -34,20 +34,6 @@ class InvFo:
                 "OutOfStockBatchCnt": row.OutOfStockBatchCnt,
             }
 
-    def load_top_categories(self) -> List[Dict[str, Any]]:
-        sql = """
-            SELECT
-                COALESCE(NULLIF(LTRIM(RTRIM(T_kateg)), ''), '(nincs)') AS Category,
-                COUNT(*) AS Cnt
-            FROM dbo.[Termék jellemzők]
-            GROUP BY COALESCE(NULLIF(LTRIM(RTRIM(T_kateg)), ''), '(nincs)')
-            ORDER BY COUNT(*) DESC, Category
-        """
-        with self.get_connection() as cn:
-            return [
-                {"Category": row.Category, "Cnt": row.Cnt}
-                for row in cn.cursor().execute(sql)
-            ]
 
     def load_top_products(self) -> List[Dict[str, Any]]:
         sql = """
@@ -71,6 +57,23 @@ class InvFo:
                 }
                 for row in cn.cursor().execute(sql)
             ]
+
+    def load_top_categories(self) -> List[Dict[str, Any]]:
+        sql = """
+            SELECT
+                COALESCE(NULLIF(LTRIM(RTRIM(p.T_kateg)), ''), '(nincs)') AS Category,
+                COALESCE(SUM(s.T_db), 0) AS Cnt
+            FROM dbo.[Termék jellemzők] AS p
+            LEFT JOIN dbo.[Konkrét termék] AS s ON p.T_ID = s.T_ID
+            GROUP BY COALESCE(NULLIF(LTRIM(RTRIM(p.T_kateg)), ''), '(nincs)')
+            ORDER BY COALESCE(SUM(s.T_db), 0) DESC, Category
+        """
+        with self.get_connection() as cn:
+            return [
+                {"Category": row.Category, "Cnt": row.Cnt}
+                for row in cn.cursor().execute(sql)
+            ]
+
 
 
 if __name__ == "__main__":

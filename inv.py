@@ -355,6 +355,16 @@ def get_categories():
     inv = Inv()
     return inv.bind_categories()
 
+
+# A main.py legtetején, a többi import mellett:
+from invfo import InvFo
+
+# Valahol lejjebb, a többi @app.get végpont között:
+@app.get("/api/top-categories")
+def get_top_categories():
+    inv_fo = InvFo()
+    return inv_fo.load_top_categories()
+
 if __name__ == "__main__":
     app.run(host="localhost", port=8000, debug=True)
     
