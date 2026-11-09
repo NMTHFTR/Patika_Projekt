@@ -62,7 +62,7 @@
             </div>
             <div class="kpi">Készlet<div class="big">{{ product.Quantity }} db</div>
             </div>
-            <div class="kpi">Lejárati idő<div class="big">{{ product.ExpiryDate }}</div>
+            <div class="kpi">Lejárati idő<div class="big">{{ formatDate(product.ExpiryDate) }}</div>
             </div>
           </div>
         </div>
@@ -126,7 +126,13 @@ const goBack = () => {
 // Dátum formázó segédfüggvény
 const formatDate = (dateStr: string) => {
   if (!dateStr) return '–'
-  return dateStr.split('T')[0]
+  const d = new Date(dateStr)
+  // Visszaadjuk a szép magyar formátumot: ÉÉÉÉ. MM. DD.
+  return d.toLocaleDateString('hu-HU', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  })
 }
 
 // Oldal betöltésekor ténylegesen lekérjük az adatokat az Azure felhőből

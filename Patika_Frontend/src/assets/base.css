@@ -262,3 +262,158 @@ table.grid {
     color: var(--muted);
     font-size: 12px;
 }
+
+
+
+.theme-toggle-container {
+  display: flex;
+  align-items: center;
+  margin-left: 15px;
+}
+
+.theme-toggle-btn {
+  position: relative;
+  width: 76px;
+  height: 38px;
+  border-radius: 20px;
+  background-color: #0b1220;
+  border: 1px solid #30435f;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 6px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.theme-toggle-btn:focus {
+  outline: none;
+}
+
+.theme-toggle-btn .icon {
+  font-size: 16px;
+  z-index: 2;
+  user-select: none;
+  transition: all 0.3s ease;
+}
+
+/* A csúszka (kis belső kör) */
+.theme-toggle-btn .toggle-slider {
+  position: absolute;
+  top: 3px;
+  left: 41px; /* Alapértelmezetten jobbra van (Dark Mode - Hold) */
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background-color: #3b82f6;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+  z-index: 1;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* AKTÍV VILÁGOS MÓD ÁLLAPOT (Balra csúszik a gomb és sárga lesz a napnál) */
+.theme-toggle-btn.light-active {
+  background-color: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.theme-toggle-btn.light-active .toggle-slider {
+  left: 4px;
+  background-color: #eab308; /* Meleg sárga szín a naphoz */
+}
+
+
+html.light-mode {
+    --bg: #f8fafc;
+    --panel: #ffffff;
+    --muted: #64748b;
+    --line: #cbd5e1;
+    --text: #0f172a;
+    background-color: #f8fafc !important;
+    color: #0f172a !important;
+}
+
+html.light-mode body {
+    background: #f8fafc !important;
+    background-color: #f8fafc !important;
+    color: #0f172a !important;
+}
+
+html.light-mode .panel {
+    background: #ffffff !important;
+    border: 1px solid #cbd5e1 !important;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05) !important;
+}
+
+html.light-mode .section-title, 
+html.light-mode .product-name,
+html.light-mode h1 {
+    color: #0f172a !important;
+}
+
+html.light-mode .kpi {
+    background: #f1f5f9 !important;
+    border: 1px solid #cbd5e1 !important;
+    color: #0f172a !important;
+}
+
+html.light-mode .kpi .big {
+    color: #0f172a !important;
+}
+
+html.light-mode .kpi .sub,
+html.light-mode .product-desc,
+html.light-mode .muted,
+html.light-mode label,
+html.light-mode p {
+    color: #64748b !important;
+}
+
+html.light-mode table.grid {
+    border-color: #cbd5e1 !important;
+}
+
+html.light-mode table.grid th {
+    background-color: #f1f5f9 !important;
+    color: #334155 !important;
+    border-bottom: 2px solid #cbd5e1 !important;
+}
+
+html.light-mode table.grid td {
+    border-bottom: 1px solid #cbd5e1 !important;
+    color: #334155 !important;
+}
+
+html.light-mode table.grid tr:hover td {
+    background-color: #f1f5f9 !important;
+}
+
+html.light-mode input[type="text"], 
+html.light-mode select {
+    background-color: #ffffff !important;
+    border: 1px solid #cbd5e1 !important;
+    color: #0f172a !important;
+}
+
+html.light-mode input[type="text"]:focus, 
+html.light-mode select:focus {
+    border-color: #3b82f6 !important;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
+}
+
+/* Gombok és kártyák igazítása világos módban */
+html.light-mode .btn {
+    background: #ffffff;
+    border-color: #cbd5e1;
+    color: #0f172a;
+}
+
+html.light-mode .btn:hover {
+    background: #f1f5f9;
+    border-color: #94a3b8;
+}
+
+html.light-mode .btn.primary {
+    color: #ffffff !important;
+}

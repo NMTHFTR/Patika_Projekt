@@ -21,6 +21,11 @@
 
       <!-- JOBB OLDAL: KPI Számlálók -->
       <div class="kpis" style="display: flex; gap: 15px; align-items: center;">
+        <button @click="toggleTheme" class="theme-toggle-btn" :class="{ 'light-active': !isDark }" title="Téma váltása">
+            <span class="icon sun">☀️</span>
+            <span class="toggle-slider"></span>
+            <span class="icon moon">🌙</span>
+          </button>
         <div class="kpi"><div class="big">{{ kpis.StockCnt || 0 }}</div><div class="sub">Összes doboz</div></div>
         <div class="kpi"><div class="big">{{ kpis.ExpiredBatchCnt || 0 }}</div><div class="sub">Lejárt tételek</div></div>
         <div class="kpi"><div class="big">{{ kpis.OutOfStockBatchCnt || 0 }}</div><div class="sub">Hiánycikk</div></div>
@@ -30,8 +35,6 @@
 
     <!-- A RouterView tölti be a menüpontokhoz tartozó tartalmat -->
     <RouterView />
-
-  <!-- Most már van mihez tartoznia ennek a záró tagnek -->
   </div>
 </template>
 
@@ -39,6 +42,23 @@
 import { RouterLink, RouterView } from 'vue-router'
 import { ref, onMounted } from 'vue'
 import axios from 'axios'
+
+const isDark = ref(true)
+
+const toggleTheme = () => {
+  isDark.value = !isDark.value
+  applyTheme()
+}
+
+const applyTheme = () => {
+  if (isDark.value) {
+    document.documentElement.classList.remove('light-mode')
+    localStorage.setItem('theme', 'dark')
+  } else {
+    document.documentElement.classList.add('light-mode')
+    localStorage.setItem('theme', 'light')
+  }
+}
 
 
 // A KPI adatok tárolója, alapértelmezett 0-s értékekkel
@@ -55,5 +75,12 @@ onMounted(async () => {
   } catch (error) {
     console.error('Hiba a KPI-k betöltésekor:', error)
   }
+
+  const savedTheme = localStorage.getItem('theme')
+  if (savedTheme == 'light'){
+    isDark.value = false
+  }
+  applyTheme()
+
 })
 </script>
