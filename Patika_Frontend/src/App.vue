@@ -1,7 +1,6 @@
+<!-- src/App.vue -->
 <template>
-  <!-- EZ A NYITÓ TAG HIÁNYZOTT: -->
   <div class="wrap">
-
     <div class="header" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
 
       <!-- BAL OLDAL: Cím és gombok -->
@@ -19,16 +18,25 @@
         </div>
       </div>
 
-      <!-- JOBB OLDAL: KPI Számlálók -->
-      <div class="kpis" style="display: flex; gap: 15px; align-items: center;">
-        <button @click="toggleTheme" class="theme-toggle-btn" :class="{ 'light-active': !isDark }" title="Téma váltása">
+      <!-- JOBB OLDALI SZEKCIÓ: Kapcsoló és KPI Számlálók egy közös tárolóban -->
+      <div style="display: flex; gap: 20px; align-items: center;">
+        
+        <!-- A Sötét/Világos mód kapcsoló gomb -->
+        <div class="theme-toggle-container" style="margin-left: 0;">
+          <button @click="toggleTheme" class="theme-toggle-btn" :class="{ 'light-active': !isDark }" title="Téma váltása">
             <span class="icon sun">☀️</span>
             <span class="toggle-slider"></span>
             <span class="icon moon">🌙</span>
           </button>
-        <div class="kpi"><div class="big">{{ kpis.StockCnt || 0 }}</div><div class="sub">Összes doboz</div></div>
-        <div class="kpi"><div class="big">{{ kpis.ExpiredBatchCnt || 0 }}</div><div class="sub">Lejárt tételek</div></div>
-        <div class="kpi"><div class="big">{{ kpis.OutOfStockBatchCnt || 0 }}</div><div class="sub">Hiánycikk</div></div>
+        </div>
+
+        <!-- JAVÍTOTT KPI Számlálók: Most már pontosan a nagybetűs mezőket olvassák be -->
+        <div class="kpis" style="display: flex; gap: 15px; align-items: center;">
+          <div class="kpi"><div class="big">{{ kpis.StockCnt || 0 }}</div><div class="sub">Összes doboz</div></div>
+          <div class="kpi"><div class="big">{{ kpis.ExpiredBatchCnt || 0 }}</div><div class="sub">Lejárt tételek</div></div>
+          <div class="kpi"><div class="big">{{ kpis.OutOfStockBatchCnt || 0 }}</div><div class="sub">Hiánycikk</div></div>
+        </div>
+
       </div>
 
     </div>
@@ -60,8 +68,7 @@ const applyTheme = () => {
   }
 }
 
-
-// A KPI adatok tárolója, alapértelmezett 0-s értékekkel
+// A KPI adatok tárolója nagybetűs kezdőértékekkel
 const kpis = ref({
   StockCnt: 0,
   ExpiredBatchCnt: 0,
@@ -77,10 +84,9 @@ onMounted(async () => {
   }
 
   const savedTheme = localStorage.getItem('theme')
-  if (savedTheme == 'light'){
+  if (savedTheme === 'light') {
     isDark.value = false
   }
   applyTheme()
-
 })
 </script>

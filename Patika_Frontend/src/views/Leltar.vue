@@ -8,28 +8,27 @@
     <div class="panel" style="margin-bottom: 16px">
       <div class="section-title">Új tétel felvétele</div>
       <table class="grid" style="margin-top: 6px">
-        <thead>
+                <thead>
           <tr>
-            <th style="width: 25%">Vonalkód</th>
-            <th style="width: 35%">Megnevezés</th>
-            <th style="width: 20%">Kategória</th>
-            <th style="width: 20%">Tároló / Polc</th>
+            <th style="width: 15%">Vonalkód</th>
+            <th style="width: 25%">Megnevezés</th>
+            <th style="width: 15%">Kategória</th>
+            <th style="width: 15%">Tároló / Polc</th>
+            <th style="width: 15%">Lejárati idő</th>
+            <th style="width: 15%">Mennyiség (db)</th> <!-- ÚJ OSZLOP -->
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td><input type="text" v-model="newItem.barcode" placeholder="Szkennelj vagy gépelj..." /></td>
-            <td><input type="text" v-model="newItem.name" placeholder="Gyógyszer vagy eszköz neve" /></td>
+            <td><input type="text" v-model="newItem.barcode" placeholder="Minimum 6 karakter..." /></td>
+            <td><input type="text" v-model="newItem.name" placeholder="Gyógyszer neve" /></td>
             <td>
-             <select v-model="newItem.category">
-  <!-- Egy alapértelmezett, nem kiválasztható opció, hogy szép legyen -->
-  <option value="" disabled>Válassz kategóriát...</option>
-
-  <!-- Ugyanaz a tömb adja az adatokat, amit a szűrőnél is használtál -->
-  <option v-for="category in categories" :key="category" :value="category">
-    {{ category }}
-  </option>
-</select>
+              <select v-model="newItem.category">
+                <option value="" disabled>Válassz kategóriát...</option>
+                <option v-for="category in categories" :key="category" :value="category">
+                  {{ category }}
+                </option>
+              </select>
             </td>
             <td>
               <select v-model="newItem.location">
@@ -39,6 +38,13 @@
                 <option value="Hűtő">Hűtő</option>
                 <option value="Raktár 1">Raktár 1</option>
               </select>
+            </td>
+            <td>
+              <input type="date" v-model="newItem.expiry_date" style="width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line); background: #0b1220; color: var(--text);" />
+            </td>
+            <!-- ÚJ MENNYISÉG BEVITELI MEZŐ -->
+            <td>
+              <input type="number" v-model="newItem.quantity" min="1" style="width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line); background: #0b1220; color: var(--text);" />
             </td>
           </tr>
         </tbody>
@@ -145,7 +151,7 @@ const filterCategory = ref('')
 const filterStatus = ref('')
 
 // A TE EREDETI REAKTÍV ŰRLAP MEZŐID
-const newItem = ref({ barcode: '', name: '', category: '', location: '' })
+const newItem = ref({ barcode: '', name: '', category: '', location: '', expiry_date: '2027-01-01', quantity: 1 })
 const statusMessage = ref('')
 
 const formatDate = (dateStr) => {
@@ -190,15 +196,50 @@ const toggleAllSelection = (event) => {
   parts.value.forEach(p => p.selected = event.target.checked)
 }
 
-const clearNewItem = () => {
-  newItem.value = { barcode: '', name: '', category: '', location: '' }
-}
 
 // Ez a funkció megmarad, a backend finomítása után fogja menteni a te mezőidet is
-const addNewItem = () => {
-  statusMessage.value = 'Űrlap mentésre kész!'
-  setTimeout(() => statusMessage.value = '', 3000)
+// 2. FUNKCIÓ: Új tétel rögzítése az Azure felhőben
+const addNewItem = async () => {
+  // ÚJ ELLENŐRZÉSEK: Kötelező mezők és a minimum 6 karakteres vonalkód limit
+  if (!newItem.value.name.trim() || !newItem.value.barcode.trim()) {
+    statusMessage.value = 'A Megnevezés és a Vonalkód kitöltése kötelező!'
+    return
+  }
+  
+  if (newItem.value.barcode.trim().length < 6) {
+    statusMessage.value = 'A vonalkód hossza nem lehet 6 karakternél rövidebb!'
+    return
+  }
+
+  try {
+    statusMessage.value = 'Mentés folyamatban...'
+    
+    await axios.post('http://localhost:8000/api/parts', {
+      barcode: newItem.value.barcode,
+      name: newItem.value.name,
+      category: newItem.value.category,
+      location: newItem.value.location,
+      expiry_date: newItem.value.expiry_date,
+      quantity: newItem.value.quantity // Átadjuk a te általad beírt darabszámot
+    })
+
+    statusMessage.value = 'Sikeresen mentve az Azure felhőbe! 🎉'
+    clearNewItem()
+    loadDataFromBackend()
+    
+    setTimeout(() => statusMessage.value = '', 4000)
+  } catch (error) {
+    statusMessage.value = 'Hiba történt a mentés során az Azure-ba.'
+    console.error(error)
+  }
 }
+
+// Az ürítésnél is állítsuk vissza az alapértelmezett dátumot
+const clearNewItem = () => {
+  newItem.value = { barcode: '', name: '', category: '', location: '', expiry_date: '2027-01-01', quantity: 1 }
+}
+
+
 
 
 const loadCategories = async () => {

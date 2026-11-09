@@ -145,24 +145,33 @@ class Inv:
             return results
 
     def load_kpis(self) -> Dict[str, int]:
+        # Egyetlen optimalizált lekérdezés az összes patika KPI adathoz - LEZÁRVA A VÉGÉN!
         sql = """
             SELECT
                 (SELECT COUNT(*) FROM dbo.[Termék jellemzők]) AS ProductCnt,
                 (SELECT COUNT(*) FROM dbo.[Konkrét termék]) AS BatchCnt,
                 (SELECT COALESCE(SUM(T_db), 0) FROM dbo.[Konkrét termék]) AS StockCnt,
                 (SELECT COUNT(*) FROM dbo.[Konkrét termék]
-                 WHERE T_lejaratdatum < CONVERT(date, GETDATE())) AS ExpiredBatchCnt,
+                 WHERE T_lejaratdatum < CAST(GETDATE() AS DATE)) AS ExpiredBatchCnt,
                 (SELECT COUNT(*) FROM dbo.[Konkrét termék] WHERE T_db <= 0) AS OutOfStockBatchCnt
-        """
+        """ # <--- ITT HIÁNYZOTT EGY ZÁRÓJEL A ");" ELŐTT, EZ OKOZTA A 0-KAT!
+        
         with self.get_connection() as cn:
             row = cn.cursor().execute(sql).fetchone()
+            if row:
+                return {
+                    "ProductCnt": getattr(row, "ProductCnt", 0),
+                    "BatchCnt": getattr(row, "BatchCnt", 0),
+                    "StockCnt": getattr(row, "StockCnt", 0),
+                    "ExpiredBatchCnt": getattr(row, "ExpiredBatchCnt", 0),
+                    "OutOfStockBatchCnt": getattr(row, "OutOfStockBatchCnt", 0),
+                }
             return {
-                "ProductCnt": row.ProductCnt,
-                "BatchCnt": row.BatchCnt,
-                "StockCnt": row.StockCnt,
-                "ExpiredBatchCnt": row.ExpiredBatchCnt,
-                "OutOfStockBatchCnt": row.OutOfStockBatchCnt,
+                "ProductCnt": 0, "BatchCnt": 0, "StockCnt": 0, 
+                "ExpiredBatchCnt": 0, "OutOfStockBatchCnt": 0
             }
+
+
 
     def build_groups(self, parts: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         grouped: Dict[int, List[Dict[str, Any]]] = {}
@@ -325,41 +334,85 @@ def get_parts():
 def add_part():
     try:
         req_data = request.get_json()
-        # Az új verzióban az add_stock_batch függvényt hívjuk meg fix adatokkal
-        service.add_stock_batch(
-            product_id=int(req_data.get('product_id', 1)),
-            batch_code=req_data.get('barcode'),
-            expiry_date=date.fromisoformat(req_data.get('expiry_date', '2027-01-01')),
-            quantity=int(req_data.get('quantity', 10))
-        )
-        return jsonify({"message": "Sikeres hozzáadás"}), 201
+        barcode = req_data.get('barcode', '').strip()
+        name = req_data.get('name', '').strip()
+        category = req_data.get('category', '').strip()
+        location = req_data.get('location', '').strip()
+        expiry_str = req_data.get('expiry_date', '2027-01-01')
+        quantity = int(req_data.get('quantity', 1))
+
+        # Alapértelmezett értékek kezelése ha valami üresen jönne
+        sor = location if location else "Raktár"
+        polc = "1"
+        
+        words = name.split()
+        brand = words[0] if words else "Ismeretlen"
+
+        # ATOMBIZTOS MEGOLDÁS OUTPUT-TAL: Egyetlen lépésben szúr be és adja vissza az új ID-t!
+        sql_jellemzo = """
+            INSERT INTO dbo.[Termék jellemzők](T_marka, T_nev, T_hatoanyag, T_kateg, T_veny, T_mennyiseg, T_mertekegyseg, T_leiras, T_sor, T_polc)
+            OUTPUT INSERTED.T_ID
+            VALUES(?, ?, ?, ?, 0, 1, 'db', 'Felhasználó által rögzített tétel.', ?, ?);
+        """
+        
+        sql_konkret = """
+            INSERT INTO dbo.[Konkrét termék](T_kod, T_ID, T_lejaratdatum, T_db)
+            VALUES(?, ?, ?, ?)
+        """
+
+        with service.get_connection() as cn:
+            cursor = cn.cursor()
+            
+            # Lépés 1: Alap adatok beszúrása és az ID azonnali kiolvasása
+            cursor.execute(sql_jellemzo, (brand, name, name, category, sor, polc))
+            row = cursor.fetchone()
+            
+            if not row or row[0] is None:
+                raise Exception("Az Azure nem tudta generálni vagy visszaadni az új gyógyszerazonosítót.")
+                
+            product_id = int(row[0])
+            
+            # Lépés 2: Konkrét darabszám és dátum mentése a kapott ID alapján
+            cursor.execute(sql_konkret, (barcode, product_id, date.fromisoformat(expiry_str), quantity))
+            
+            cn.commit()
+
+        return jsonify({"message": "Sikeres hozzáadás az Azure-ba", "ProductId": product_id}), 201
     except Exception as e:
+        print("!!! JAVÍTÁSI ADATBÁZIS HIBA:", str(e))
         return jsonify({"error": str(e)}), 500
+
+
+
 
 @app.route('/api/parts/<id>', methods=['GET'])
 def get_part_by_id(id):
     try:
-        # A csapattársad által írt függvény listát vár, ezért listába rakjuk az ID-t
         result = service.get_parts_by_ids([id])
         if not result or len(result) == 0:
             return jsonify({"error": "A gyógyszer nem található"}), 404
-        # Mivel a get_parts_by_ids listát ad vissza, kiszedjük belőle az első elemet
         return jsonify(result[0])
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
 
 
-@app.get("/api/categories")
+@app.route('/api/categories', methods=['GET'])
 def get_categories():
-    inv = Inv()
-    return inv.bind_categories()
+    try:
+        # Lekérjük az egyedi kategóriákat közvetlenül az adatbázisból
+        sql = "SELECT DISTINCT T_kateg FROM dbo.[Termék jellemzők] WHERE T_kateg IS NOT NULL"
+        with service.get_connection() as cn:
+            cursor = cn.cursor()
+            categories = [row[0].strip() for row in cursor.execute(sql) if row[0]]
+        return jsonify(categories)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
-# A main.py legtetején, a többi import mellett:
+
 from invfo import InvFo
 
-# Valahol lejjebb, a többi @app.get végpont között:
 @app.get("/api/top-categories")
 def get_top_categories():
     inv_fo = InvFo()
