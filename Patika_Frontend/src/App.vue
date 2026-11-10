@@ -76,12 +76,14 @@ const kpis = ref({
 })
 
 onMounted(async () => {
-  try {
-    const response = await axios.get('http://localhost:8000/api/kpis')
-    kpis.value = response.data
-  } catch (error) {
-    console.error('Hiba a KPI-k betöltésekor:', error)
-  }
+  setTimeout(async () => {
+    try {
+      const response = await axios.get('http://localhost:8000/api/kpis')
+      kpis.value = response.data
+    } catch (error) {
+      console.error('Hiba a KPI-k betöltésekor:', error)
+    }
+  }, 150)
 
   const savedTheme = localStorage.getItem('theme')
   if (savedTheme === 'light') {

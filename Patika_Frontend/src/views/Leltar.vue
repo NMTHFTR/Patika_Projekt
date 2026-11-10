@@ -40,11 +40,10 @@
               </select>
             </td>
             <td>
-              <input type="date" v-model="newItem.expiry_date" style="width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line); background: #0b1220; color: var(--text);" />
+               <input type="date" v-model="newItem.expiry_date" class="form-control-custom" style="width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line); color: var(--text); background-color: var(--bg);" />
             </td>
-            <!-- ÚJ MENNYISÉG BEVITELI MEZŐ -->
             <td>
-              <input type="number" v-model="newItem.quantity" min="1" style="width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line); background: #0b1220; color: var(--text);" />
+              <input type="number" v-model="newItem.quantity" min="1" class="form-control-custom" style="width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line); color: var(--text); background-color: var(--bg);" />
             </td>
           </tr>
         </tbody>

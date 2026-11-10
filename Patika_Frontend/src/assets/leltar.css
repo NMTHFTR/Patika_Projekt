@@ -111,3 +111,26 @@ input[type="checkbox"] {
   border-color: #60a5fa !important;
   color: #b8d3fa !important;
 }
+
+input[type="date"], input[type="number"] {
+    color-scheme: dark; 
+}
+
+html.light-mode input[type="date"], html.light-mode input[type="number"] {
+    color-scheme: light;
+}
+
+select {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  padding-right: 10px !important;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://w3.org' viewBox='0 0 24 24' fill='none' stroke='%233b82f6' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3cpolyline%3e%3c/svg%3e") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 10px center !important;
+  background-size: 16px !important;
+}
+
+html.light-mode select {
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://w3.org' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3cpolyline%3e%3c/svg%3e") !important;
+}
