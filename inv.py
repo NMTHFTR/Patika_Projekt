@@ -418,8 +418,70 @@ def get_top_categories():
     inv_fo = InvFo()
     return inv_fo.load_top_categories()
 
+
+@app.route('/api/sell', methods=['POST'])
+def sell_product():
+    try:
+        req_data = request.get_json()
+        product_id = int(req_data.get('product_id'))
+        receipt_code = str(req_data.get('receipt_code', '')).strip()
+        sell_qty = int(req_data.get('quantity', 0))
+
+        if not receipt_code:
+            return jsonify({"error": "A nyugtaszám megadása kötelező!"}), 400
+        if len(receipt_code) > 15:
+            return jsonify({"error": "A nyugtaszám maximum 15 karakter lehet!"}), 400
+        if sell_qty <= 0:
+            return jsonify({"error": "Az eladott mennyiségnek legalább 1-nek kell lennie!"}), 400
+
+        with service.get_connection() as cn:
+            cursor = cn.cursor()
+
+            cursor.execute("""
+                SELECT T_kod, T_db, T_lejaratdatum
+                FROM dbo.[Konkrét termék]
+                WHERE T_ID = ? AND T_db > 0
+                ORDER BY T_lejaratdatum ASC
+            """, (product_id,))
+            batches = cursor.fetchall()
+
+            total_available = sum(int(row.T_db) for row in batches)
+            if total_available < sell_qty:
+                return jsonify({"error": f"Nincs elég készlet! Összesen elérhető: {total_available} db."}), 400
+
+            remaining_to_sell = sell_qty
+
+            for batch in batches:
+                if remaining_to_sell <= 0:
+                    break
+
+                batch_code = batch.T_kod
+                available_in_batch = int(batch.T_db)
+                take = min(available_in_batch, remaining_to_sell)
+
+                cursor.execute("""
+                    UPDATE dbo.[Konkrét termék]
+                    SET T_db = T_db - ?
+                    WHERE T_kod = ?
+                """, (take, batch_code))
+
+                cursor.execute("""
+                    INSERT INTO dbo.[Eladások] (E_kod, T_kod, E_datum, E_db)
+                    VALUES (?, ?, GETDATE(), ?)
+                """, (receipt_code, batch_code, take))
+
+                remaining_to_sell -= take
+
+            cn.commit()
+
+        return jsonify({"message": f"Sikeres eladás! ({sell_qty} db rögzítve a {receipt_code} számú nyugtára.)"}), 200
+    except Exception as e:
+        print("!!! ELADÁSI HIBA:", str(e))
+        return jsonify({"error": str(e)}), 500
+
+
+
 if __name__ == "__main__":
     app.run(host="localhost", port=8000, debug=True)
     
     
-

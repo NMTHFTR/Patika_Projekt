@@ -75,15 +75,20 @@ const kpis = ref({
   OutOfStockBatchCnt: 0
 })
 
-onMounted(async () => {
-  setTimeout(async () => {
-    try {
-      const response = await axios.get('http://localhost:8000/api/kpis')
-      kpis.value = response.data
-    } catch (error) {
-      console.error('Hiba a KPI-k betöltésekor:', error)
-    }
-  }, 150)
+const fetchHeaderKpis = async () => {
+  try {
+    const response = await axios.get('http://localhost:8000/api/kpis')
+    kpis.value = response.data
+  } catch (error) {
+    console.error('Hiba a KPI-k betöltésekor:', error)
+  }
+}
+
+onMounted(() => {
+  setTimeout(fetchHeaderKpis, 150)
+
+  // Figyeljük a Leltar.vue jelzését, és azonnal frissítünk
+  window.addEventListener('kpis-updated', fetchHeaderKpis)
 
   const savedTheme = localStorage.getItem('theme')
   if (savedTheme === 'light') {

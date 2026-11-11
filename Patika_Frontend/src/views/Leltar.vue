@@ -1,7 +1,12 @@
 <!-- src/views/Leltar.vue -->
 <template>
   <div class="wrap">
-    <!-- Felső KPI rész -->
+    <div 
+      v-if="toastMessage" 
+      style="position: fixed; top: 24px; left: 50%; transform: translateX(-50%); background-color: #16a34a; color: white; padding: 14px 28px; border-radius: 12px; font-weight: bold; font-size: 15px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4); z-index: 10000; display: flex; align-items: center; gap: 10px;"
+    >
+      <span>{{ toastMessage }}</span>
+    </div>
 
 
     <!-- A TE EREDETI ÚRLAPOD (Megmaradt változtatás nélkül) -->
@@ -109,12 +114,20 @@
             <td>{{ item.Location }}</td>
             <td>{{ formatDate(item.ExpiryDate) }}</td>
             <td>
-              <span :class="['tag', item.Quantity > 0 ? 'green' : 'red']">
+              <div style="display: inline-flex; align-items: center; gap: 8px; flex-wrap: nowrap;">
+                <span :class="['tag', item.Quantity > 0 ? 'green' : 'red']">
                 {{ item.Quantity }} db
               </span>
+              <button
+                  v-if="item.Quantity > 0"
+                  @click="openSellModal(item)"
+                  title="Termék eladása"
+                  class="tag red" style="cursor: pointer;">
+                  −
+                </button>
+              </div>
             </td>
             <td style="text-align: center;">
-              <!-- JAVÍTOTT LINK: Most már a valódi termékazonosítót (ProductId) küldi el a megnyitáshoz -->
               <RouterLink
                 :to="'/inventory/' + item.PartId"
                 class="btn primary"
@@ -131,6 +144,34 @@
           </tr>
         </tbody>
       </table>
+    </div>
+      <div v-if="sellModal.isOpen" style="position: fixed; inset: 0; background: rgba(0, 0, 0, 0.7); display: flex; align-items: center; justify-content: center; z-index: 9999;">
+      <div class="panel" style="width: 100%; max-width: 420px; padding: 24px; border-radius: 14px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);">
+        <div class="section-title" style="font-size: 18px; margin-bottom: 6px;">Termék eladása</div>
+        <p style="color: var(--muted); font-size: 13px; margin-bottom: 16px;">
+          <strong>{{ sellModal.productName }}</strong><br />
+          A rendszer automatikusan a legközelebb lejáró készletből vonja le a mennyiséget.
+        </p>
+
+        <div class="stack" style="margin-bottom: 12px;">
+          <label>Nyugta száma (max. 15 karakter)</label>
+          <input type="text" v-model="sellModal.receiptCode" maxlength="15" placeholder="Pl. 1046402" />
+        </div>
+
+        <div class="stack" style="margin-bottom: 16px;">
+          <label>Eladott mennyiség (db)</label>
+          <input type="number" v-model="sellModal.quantity" min="1" style="width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line); color: var(--text); background-color: var(--bg);" />
+        </div>
+
+        <div v-if="sellModal.error" style="color: #ef4444; font-size: 13px; margin-bottom: 12px; font-weight: bold;">
+          {{ sellModal.error }}
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 10px;">
+          <button class="btn warn" @click="closeSellModal">Mégse</button>
+          <button class="btn success" @click="confirmSell">Eladás rögzítése</button>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -178,6 +219,7 @@ const loadDataFromBackend = async () => {
 
     const kpiRes = await axios.get('http://localhost:8000/api/kpis')
     kpis.value = kpiRes.data
+    window.dispatchEvent(new Event('kpis-udated'))
   } catch (error) {
     console.error("Hiba az adatok lekérésekor:", error)
   }
@@ -222,11 +264,12 @@ const addNewItem = async () => {
       quantity: newItem.value.quantity // Átadjuk a te általad beírt darabszámot
     })
 
-    statusMessage.value = 'Sikeresen mentve az Azure felhőbe! 🎉'
+    statusMessage.value = 'Sikeresen mentve az Azure felhőbe!'
     clearNewItem()
-    loadDataFromBackend()
+    await loadDataFromBackend()
+    window.dispatchEvent(new Event('kpis-updated'))
     
-    setTimeout(() => statusMessage.value = '', 4000)
+    setTimeout(() => statusMessage.value = '', 5000)
   } catch (error) {
     statusMessage.value = 'Hiba történt a mentés során az Azure-ba.'
     console.error(error)
@@ -250,6 +293,67 @@ const loadCategories = async () => {
   }
 }
 
+const sellModal = ref({
+  isOpen: false,
+  productId: null,
+  productName: '',
+  receiptCode: '',
+  quantity: 1,
+  error: ''
+})
+
+const openSellModal = (item) => {
+  sellModal.value = {
+    isOpen: true,
+    productId: item.ProductId,
+    productName: item.Name,
+    receiptCode: '',
+    quantity: 1,
+    error: ''
+  }
+}
+
+const closeSellModal = () => {
+  sellModal.value.isOpen = false
+}
+
+const toastMessage = ref('')
+let toastTimer = null
+
+const showToast = (msg) => {
+  toastMessage.value = msg
+  if (toastTimer) clearTimeout(toastTimer)
+  toastTimer = setTimeout(() => {
+    toastMessage.value = ''
+  }, 5000)
+}
+
+const confirmSell = async () => {
+  if (!sellModal.value.receiptCode.trim()) {
+    sellModal.value.error = 'A nyugta számának megadása kötelező!'
+    return
+  }
+  if (sellModal.value.quantity < 1) {
+    sellModal.value.error = 'Legalább 1 darabot kell megadni!'
+    return
+  }
+
+  try {
+    sellModal.value.error = ''
+    const res = await axios.post('http://localhost:8000/api/sell', {
+      product_id: sellModal.value.productId,
+      receipt_code: sellModal.value.receiptCode,
+      quantity: sellModal.value.quantity
+    })
+
+    closeSellModal()
+    await loadDataFromBackend()
+    window.dispatchEvent(new Event('kpis-updated'))
+    showToast(res.data.message || 'Sikeres eladás rögzítve!')
+  } catch (err) {
+    sellModal.value.error = err.response?.data?.error || 'Hiba történt az eladás során.'
+  }
+}
 
 
 </script>
