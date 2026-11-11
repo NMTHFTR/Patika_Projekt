@@ -58,11 +58,22 @@
           <div class="kpis" style="margin-top: 24px;">
             <div class="kpi">Kategória<div class="big">{{ product.Category }}</div>
             </div>
-            <div class="kpi">Tároló<div class="big">{{ product.Location }}</div>
+            <div class="kpi">Raktári pozíció<div class="big">{{ product.Location }}</div>
             </div>
             <div class="kpi">Készlet<div class="big">{{ product.Quantity }} db</div>
             </div>
             <div class="kpi">Lejárati idő<div class="big">{{ formatDate(product.ExpiryDate) }}</div>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; width: 95%; margin: 20px auto 0 auto;">
+            <div class="kpi" style="width: 100%; margin: 0; text-align: center;">Eladva ebben a hónapban
+              <div class="big" style="color: #3b82f6; margin-top: 6px;">{{ salesStats.MonthlySold }} db
+              </div>
+            </div>
+            <div class="kpi" style="width: 100%; margin: 0; text-align: center;">Összesen eladva eddig
+              <div class="big" style="color: #3b82f6; margin-top: 6px;">{{ salesStats.TotalSold }} db
+              </div>
             </div>
           </div>
         </div>
@@ -74,8 +85,7 @@
 </template>
 
 
-<!-- 2. TYPESCRIPT LOGIKA -->
-<!-- 2. TYPESCRIPT LOGIKA -->
+
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -135,6 +145,11 @@ const formatDate = (dateStr: string) => {
   })
 }
 
+const salesStats = ref({
+  MonthlySold: 0,
+  TotalSold: 0
+})
+
 // Oldal betöltésekor ténylegesen lekérjük az adatokat az Azure felhőből
 onMounted(async () => {
   try {
@@ -146,6 +161,11 @@ onMounted(async () => {
       // JAVÍTOTT LINK (Hozzáadva a / perjel, hogy betöltsön a tesztkép)
       imageUrl: 'https://placehold.co' + encodeURIComponent(response.data.Name || 'Gyogyszer')
     }
+    if (response.data.ProductId) {
+      const statsRes = await axios.get(`http://localhost:8000/api/sales-stats/${response.data.ProductId}`)
+      salesStats.value = statsRes.data
+    }
+
   } catch (error) {
     console.error("Hiba a gyógyszer részleteinek letöltésekor:", error)
     product.value.Name = "Hiba történt az adatok letöltésekor."

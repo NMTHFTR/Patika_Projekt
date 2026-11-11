@@ -419,6 +419,64 @@ def get_top_categories():
     return inv_fo.load_top_categories()
 
 
+@app.route('/api/top-sold', methods=['GET'])
+def get_top_sold():
+    try:
+        sql = """
+            SELECT
+                p.T_nev AS Name,
+                p.T_kateg AS Category,
+                COALESCE(SUM(e.E_db), 0) AS TotalSold
+            FROM dbo.[Eladások] e
+            INNER JOIN dbo.[Konkrét termék] k ON e.T_kod = k.T_kod
+            INNER JOIN dbo.[Termék jellemzők] p ON k.T_ID = p.T_ID
+            GROUP BY p.T_ID, p.T_nev, p.T_kateg
+            ORDER BY TotalSold DESC
+        """
+        with service.get_connection() as cn:
+            cursor = cn.cursor()
+            results = [
+                {
+                    "Name": row.Name.strip(),
+                    "Category": row.Category.strip() if row.Category else "",
+                    "TotalSold": int(row.TotalSold)
+                }
+                for row in cursor.execute(sql)
+            ]
+        return jsonify(results)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+
+@app.route('/api/sales-stats/<int:product_id>', methods=['GET'])
+def get_product_sales_stats(product_id):
+    try:
+        sql = """
+            SELECT
+                COALESCE(SUM(e.E_db), 0) AS TotalSold,
+                COALESCE(SUM(
+                    CASE 
+                        WHEN YEAR(e.E_datum) = YEAR(GETDATE()) AND MONTH(e.E_datum) = MONTH(GETDATE()) 
+                        THEN e.E_db 
+                        ELSE 0 
+                    END
+                ), 0) AS MonthlySold
+            FROM dbo.[Eladások] e
+            INNER JOIN dbo.[Konkrét termék] k ON e.T_kod = k.T_kod
+            WHERE k.T_ID = ?
+        """
+        with service.get_connection() as cn:
+            row = cn.cursor().execute(sql, (product_id,)).fetchone()
+            return jsonify({
+                "TotalSold": int(row.TotalSold) if row else 0,
+                "MonthlySold": int(row.MonthlySold) if row else 0
+            })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+
 @app.route('/api/sell', methods=['POST'])
 def sell_product():
     try:

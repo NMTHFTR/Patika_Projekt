@@ -28,23 +28,52 @@
       </div>
     </div>
 
-    <div class="panel" style="margin-top: 16px;">
-      <div class="section-title" style="margin-bottom:16px;">Top Kategória Darabszám</div>
-      <table class="grid">
-        <thead>
-          <tr>
-            <th>Kategória</th>
-            <th>Darab</th>
-          </tr>
-        </thead>
+        <!-- Kétoszlopos fele-fele elrendezés -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px;">
+      
+      <!-- BAL OLDAL (50%) -->
+      <div class="panel">
+        <div class="section-title" style="margin-bottom: 16px;">Top Kategória Darabszám</div>
+        <table class="grid">
+          <thead>
+            <tr>
+              <th>Kategória</th>
+              <th>Darab</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="cat in topCategories" :key="cat.Category">
+              <td>{{ cat.Category }}</td>
+              <td>{{ cat.Cnt }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
 
-        <tbody>
-          <tr v-for="cat in topCategories" :key="cat.Category">
-            <td>{{ cat.Category }}</td>
-            <td>{{ cat.Cnt }}</td>
-          </tr>
-        </tbody>
-      </table>
+      <!-- JOBB OLDAL (50%) -->
+      <div class="panel">
+        <div class="section-title" style="margin-bottom: 16px;">Legtöbbet Eladott Termékek</div>
+        <table class="grid">
+          <thead>
+            <tr>
+              <th>Termék megnevezése</th>
+              <th style="text-align: right;">Eladott darab</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="(item, index) in topSoldProducts" :key="index">
+              <td>{{ item.Name }}</td>
+              <td style="text-align: right; font-weight: bold;">{{ item.TotalSold }} db</td>
+            </tr>
+            <tr v-if="!topSoldProducts || topSoldProducts.length === 0">
+              <td colspan="2" style="text-align: center; color: var(--muted); padding: 16px;">
+                Még nincs rögzített eladás az adatbázisban.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
     </div>
   </main>
 </template>
@@ -61,21 +90,19 @@ const projects = ref({ all: 0, active: 0, inactive: 0 })
 const topCategories = ref<any[]>([])
 
 
-
-
-
+const topSoldProducts = ref<any[]>([])
 
 
 onMounted(async () => {
   try {
-    // 1. Top kategóriák lekérése a táblázathoz
     const catResponse = await axios.get('http://localhost:8000/api/top-categories')
     topCategories.value = catResponse.data
 
-    // 2. KPI adatok lekérése a felső statisztika dobozokhoz
-    // (Ugyanazt a végpontot használjuk, amit a fejlécben lévő 3 kis doboznál is)
     const kpiResponse = await axios.get('http://localhost:8000/api/kpis')
     const realKpis = kpiResponse.data
+
+    const soldRes = await axios.get('http://localhost:8000/api/top-sold')
+    topSoldProducts.value = soldRes.data
 
     // 3. Rákötjük a valós adatokat a régi dummy változókra:
     // GYÓGYSZEREK doboz:
