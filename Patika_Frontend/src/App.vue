@@ -5,14 +5,24 @@
 
       <div>
         <div class="brand">Patika Okosraktár</div>
-        <div class="nav-group">
-          <RouterLink to="/" class="nav-btn">Főoldal</RouterLink>
-          <RouterLink to="/inventory" class="nav-btn">Leltár</RouterLink>
+        <div style="display:flex; gap:10px; align-items:center; margin: 5px 0 0 0;">
+          <RouterLink to="/"
+            style="text-decoration:none; padding:8px 12px; border:1px solid #30435f; border-radius:10px; font-size: 1rem;">
+            Főoldal
+          </RouterLink>
+          <RouterLink to="/inventory"
+            style="text-decoration:none; padding:8px 12px; border:1px solid #30435f; border-radius:10px; font-size: 1rem;">
+            Leltár
+          </RouterLink>
+          <RouterLink to="/add-product-type"
+              style="text-decoration:none; padding:8px 12px; border:1px solid #30435f; border-radius:10px; font-size: 1rem;">
+              Katalógus bővítése
+          </RouterLink>
         </div>
       </div>
 
       <div style="display: flex; gap: 20px; align-items: center;">
-        
+
         <!-- A Sötét/Világos mód kapcsoló gomb -->
         <div class="theme-toggle-container" style="margin-left: 0;">
           <button @click="toggleTheme" class="theme-toggle-btn" :class="{ 'light-active': !isDark }" title="Téma váltása">
@@ -59,6 +69,9 @@ const applyTheme = () => {
   }
 }
 
+
+
+
 // A KPI adatok tárolója nagybetűs kezdőértékekkel
 const kpis = ref({
   StockCnt: 0,
@@ -74,6 +87,9 @@ const fetchHeaderKpis = async () => {
     console.error('Hiba a KPI-k betöltésekor:', error)
   }
 }
+
+
+
 
 onMounted(() => {
   setTimeout(fetchHeaderKpis, 5)
