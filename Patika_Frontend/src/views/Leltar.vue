@@ -24,7 +24,7 @@
           <tr>
             <td>
               <select v-model="newItem.category" @change="newItem.name = ''" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--line); background-color: var(--bg); color: var(--text);">
-                <option value="" disabled>1. Válassz kategóriát...</option>
+                <option value="" disabled>Válassz kategóriát...</option>
                 <option v-for="category in categories" :key="category" :value="category">
                   {{ category }}
                 </option>
@@ -414,15 +414,15 @@ const sortedParts = computed(() => {
 
 const getExpiryTextClass = (dateStr) => {
   if (!dateStr) return 'expiry-text-green'
-  
+
   const today = new Date()
   today.setHours(0, 0, 0, 0)
-  
+
   const expiry = new Date(dateStr)
   expiry.setHours(0, 0, 0, 0)
-  
+
   const diffDays = Math.ceil((expiry.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
-  
+
   if (diffDays < 0) return 'expiry-text-red'
   if (diffDays <= 30) return 'expiry-text-yellow'
   return 'expiry-text-green'
