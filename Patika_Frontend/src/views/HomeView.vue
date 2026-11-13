@@ -29,28 +29,26 @@
     </div>
 
         <!-- Kétoszlopos fele-fele elrendezés -->
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px;">
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 16px; margin-top: 16px;">
       
-      <!-- BAL OLDAL (50%) -->
       <div class="panel">
         <div class="section-title" style="margin-bottom: 16px;">Top Kategória Darabszám</div>
         <table class="grid">
           <thead>
             <tr>
               <th>Kategória</th>
-              <th>Darab</th>
+              <th style="text-align: right;">Darab</th>
             </tr>
           </thead>
           <tbody>
             <tr v-for="cat in topCategories" :key="cat.Category">
               <td>{{ cat.Category }}</td>
-              <td>{{ cat.Cnt }}</td>
+              <td style="text-align: right; font-weight: bold;">{{ cat.Cnt }}</td>
             </tr>
           </tbody>
         </table>
       </div>
 
-      <!-- JOBB OLDAL (50%) -->
       <div class="panel">
         <div class="section-title" style="margin-bottom: 16px;">Legtöbbet Eladott Termékek</div>
         <table class="grid">
@@ -95,50 +93,33 @@ const topSoldProducts = ref<any[]>([])
 
 onMounted(async () => {
   try {
-    const catResponse = await axios.get('http://localhost:8000/api/top-categories')
-    topCategories.value = catResponse.data
+    // Párhuzamosítjuk a 3 kérést, így nem várják meg egymást
+    const [catResponse, kpiResponse, soldRes] = await Promise.all([
+      axios.get('http://localhost:8000/api/top-categories'),
+      axios.get('http://localhost:8000/api/kpis'),
+      axios.get('http://localhost:8000/api/top-sold')
+    ])
 
-    const kpiResponse = await axios.get('http://localhost:8000/api/kpis')
+    topCategories.value = catResponse.data
+    topSoldProducts.value = soldRes.data
     const realKpis = kpiResponse.data
 
-    const soldRes = await axios.get('http://localhost:8000/api/top-sold')
-    topSoldProducts.value = soldRes.data
-
-    // 3. Rákötjük a valós adatokat a régi dummy változókra:
-    // GYÓGYSZEREK doboz:
     stats.value = {
-      all: realKpis.ProductCnt,        // Különböző gyógyszerfajták száma
-      free: realKpis.StockCnt,         // Összes fizikai doboz a raktárban
-      assigned: realKpis.BatchCnt      // Raktári bejegyzések/tételek száma
+      all: realKpis.ProductCnt,
+      free: realKpis.StockCnt,
+      assigned: realKpis.BatchCnt
     }
 
-    // PROJEKTEK doboz (Ezt a HTML-ben majd átírhatod "Készletállapot"-ra):
     projects.value = {
-      all: realKpis.StockCnt,          // Összes doboz
-      active: realKpis.StockCnt - realKpis.ExpiredBatchCnt, // Jó szavatosságú dobozok
-      inactive: realKpis.ExpiredBatchCnt // Lejárt dobozok
-    }
-
-    stats.value = {
-      all: realKpis.ProductCnt,        // Különböző gyógyszerfajták (7)
-      free: realKpis.StockCnt,         // Összes fizikai doboz (734)
-      assigned: realKpis.BatchCnt      // Raktári bejegyzések (9)
-    }
-
-    // KÉSZLETÁLLAPOT doboz (A régi "Projektek"):
-    projects.value = {
-      // Érvényes = Összes doboz mínusz a lejártak
       all: realKpis.StockCnt - realKpis.ExpiredBatchCnt,
-
-      // Lejárt = ExpiredBatchCnt
       active: realKpis.ExpiredBatchCnt,
-
-      // Kifogyott = OutOfStockBatchCnt
       inactive: realKpis.OutOfStockBatchCnt
     }
-
   } catch (error) {
     console.error('Hiba az adatok betöltésekor:', error)
   }
 })
+
+
+
 </script>

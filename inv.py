@@ -77,8 +77,13 @@ class Inv:
                 sql += " AND stock.T_db <= 0"
             elif status == "expired":
                 sql += " AND stock.T_lejaratdatum < CONVERT(date, GETDATE())"
+            elif status == "expiring_soon":
+                sql += " AND stock.T_lejaratdatum >= CONVERT(date, GETDATE()) AND stock.T_lejaratdatum <= DATEADD(day, 30, CONVERT(date, GETDATE()))"
+            elif status == "valid":
+                sql += " AND stock.T_lejaratdatum > DATEADD(day, 30, CONVERT(date, GETDATE()))"
             else:
                 raise ValueError("A státusz csak in_stock, out_of_stock vagy expired lehet.")
+        
 
         if product_id is not None:
             sql += " AND stock.T_ID = ?"

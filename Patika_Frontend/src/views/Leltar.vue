@@ -81,12 +81,13 @@
   </select>
 </div>
         <div class="stack" style="grid-column: span 3">
-          <label>Készlet státusz</label>
+          <label>Készlet és lejárat</label>
           <select v-model="filterStatus" @change="loadDataFromBackend">
-            <option value="">Összes státusz</option>
+            <option value="">Összes tétel</option>
             <option value="in_stock">Készleten van</option>
             <option value="out_of_stock">Elfogyott (0 db)</option>
             <option value="expired">Lejárt szavatosságú</option>
+            <option value="expiring_soon">1 hónapon belül lejár</option>
           </select>
         </div>
       </div>
@@ -100,19 +101,28 @@
             <th>Gyógyszer megnevezése</th>
             <th>Kategória</th>
             <th>Tároló</th>
-            <th>Lejárati idő</th>
+            <th @click="toggleExpirySort" style="cursor: pointer; user-select: none; white-space: nowrap;" title="Kattints a rendezéshez">Lejárati idő
+              <span style="margin-left: 4px; color: #3b82f6;">
+                {{ expirySortOrder === 'asc' ? '▲' : expirySortOrder === 'desc' ? '▼' : '⇅' }}
+              </span>
+            </th>
             <th>Mennyiség</th>
             <th style="width: 100px; text-align: center;">Részletek</th>
           </tr>
         </thead>
         <tbody>
-          <tr v-for="item in parts" :key="item.PartId">
+          <tr v-for="item in sortedParts" :key="item.PartId">
             <td><input type="checkbox" v-model="item.selected" /></td>
             <td>{{ item.Barcode || '–' }}</td>
             <td>{{ item.Name }}</td>
             <td>{{ item.Category }}</td>
             <td>{{ item.Location }}</td>
-            <td>{{ formatDate(item.ExpiryDate) }}</td>
+            <td style="white-space: nowrap;">
+              <span :class="[getExpiryTextClass(item.ExpiryDate)]">
+                {{ formatDate(item.ExpiryDate) }}
+              </span>
+            </td>
+
             <td>
               <div style="display: inline-flex; align-items: center; gap: 8px; flex-wrap: nowrap;">
                 <span :class="['tag', item.Quantity > 0 ? 'green' : 'red']">
@@ -177,7 +187,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { RouterLink } from 'vue-router'
 import axios from 'axios'
 import '../assets/leltar.css'
@@ -190,7 +200,6 @@ const searchQuery = ref('')
 const filterCategory = ref('')
 const filterStatus = ref('')
 
-// A TE EREDETI REAKTÍV ŰRLAP MEZŐID
 const newItem = ref({ barcode: '', name: '', category: '', location: '', expiry_date: '2027-01-01', quantity: 1 })
 const statusMessage = ref('')
 
@@ -219,7 +228,7 @@ const loadDataFromBackend = async () => {
 
     const kpiRes = await axios.get('http://localhost:8000/api/kpis')
     kpis.value = kpiRes.data
-    window.dispatchEvent(new Event('kpis-udated'))
+    window.dispatchEvent(new Event('kpis-updated'))
   } catch (error) {
     console.error("Hiba az adatok lekérésekor:", error)
   }
@@ -238,8 +247,6 @@ const toggleAllSelection = (event) => {
 }
 
 
-// Ez a funkció megmarad, a backend finomítása után fogja menteni a te mezőidet is
-// 2. FUNKCIÓ: Új tétel rögzítése az Azure felhőben
 const addNewItem = async () => {
   // ÚJ ELLENŐRZÉSEK: Kötelező mezők és a minimum 6 karakteres vonalkód limit
   if (!newItem.value.name.trim() || !newItem.value.barcode.trim()) {
@@ -354,6 +361,48 @@ const confirmSell = async () => {
     sellModal.value.error = err.response?.data?.error || 'Hiba történt az eladás során.'
   }
 }
+
+
+
+const expirySortOrder = ref(null)
+
+const toggleExpirySort = () => {
+  if (expirySortOrder.value === null) {
+    expirySortOrder.value = 'asc'
+  } else if (expirySortOrder.value === 'asc') {
+    expirySortOrder.value = 'desc'
+  } else {
+    expirySortOrder.value = null
+  }
+}
+
+const sortedParts = computed(() => {
+  if (!parts.value) return []
+  if (!expirySortOrder.value) return parts.value
+
+  return [...parts.value].sort((a, b) => {
+    const dateA = a.ExpiryDate ? new Date(a.ExpiryDate).getTime() : 0
+    const dateB = b.ExpiryDate ? new Date(b.ExpiryDate).getTime() : 0
+    return expirySortOrder.value === 'asc' ? dateA - dateB : dateB - dateA
+  })
+})
+
+const getExpiryTextClass = (dateStr) => {
+  if (!dateStr) return 'expiry-text-green'
+  
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  
+  const expiry = new Date(dateStr)
+  expiry.setHours(0, 0, 0, 0)
+  
+  const diffDays = Math.ceil((expiry.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+  
+  if (diffDays < 0) return 'expiry-text-red'
+  if (diffDays <= 30) return 'expiry-text-yellow'
+  return 'expiry-text-green'
+}
+
 
 
 </script>
