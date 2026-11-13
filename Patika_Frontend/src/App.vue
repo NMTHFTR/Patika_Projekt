@@ -15,12 +15,16 @@
             style="text-decoration:none; padding:8px 12px; border:1px solid #30435f; border-radius:10px; font-size: 1rem;">
             Leltár
           </RouterLink>
+          <RouterLink to="/add-product-type"
+  style="text-decoration:none; padding:8px 12px; border:1px solid #30435f; border-radius:10px; font-size: 1rem;">
+  Katalógus bővítése
+</RouterLink>
         </div>
       </div>
 
       <!-- JOBB OLDALI SZEKCIÓ: Kapcsoló és KPI Számlálók egy közös tárolóban -->
       <div style="display: flex; gap: 20px; align-items: center;">
-        
+
         <!-- A Sötét/Világos mód kapcsoló gomb -->
         <div class="theme-toggle-container" style="margin-left: 0;">
           <button @click="toggleTheme" class="theme-toggle-btn" :class="{ 'light-active': !isDark }" title="Téma váltása">
@@ -68,6 +72,9 @@ const applyTheme = () => {
   }
 }
 
+
+
+
 // A KPI adatok tárolója nagybetűs kezdőértékekkel
 const kpis = ref({
   StockCnt: 0,
@@ -83,6 +90,9 @@ const fetchHeaderKpis = async () => {
     console.error('Hiba a KPI-k betöltésekor:', error)
   }
 }
+
+
+
 
 onMounted(() => {
   setTimeout(fetchHeaderKpis, 150)

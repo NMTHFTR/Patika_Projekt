@@ -1,8 +1,8 @@
 <!-- src/views/Leltar.vue -->
 <template>
   <div class="wrap">
-    <div 
-      v-if="toastMessage" 
+    <div
+      v-if="toastMessage"
       style="position: fixed; top: 24px; left: 50%; transform: translateX(-50%); background-color: #16a34a; color: white; padding: 14px 28px; border-radius: 12px; font-weight: bold; font-size: 15px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4); z-index: 10000; display: flex; align-items: center; gap: 10px;"
     >
       <span>{{ toastMessage }}</span>
@@ -246,7 +246,7 @@ const addNewItem = async () => {
     statusMessage.value = 'A Megnevezés és a Vonalkód kitöltése kötelező!'
     return
   }
-  
+
   if (newItem.value.barcode.trim().length < 6) {
     statusMessage.value = 'A vonalkód hossza nem lehet 6 karakternél rövidebb!'
     return
@@ -254,7 +254,7 @@ const addNewItem = async () => {
 
   try {
     statusMessage.value = 'Mentés folyamatban...'
-    
+
     await axios.post('http://localhost:8000/api/parts', {
       barcode: newItem.value.barcode,
       name: newItem.value.name,
@@ -268,7 +268,7 @@ const addNewItem = async () => {
     clearNewItem()
     await loadDataFromBackend()
     window.dispatchEvent(new Event('kpis-updated'))
-    
+
     setTimeout(() => statusMessage.value = '', 5000)
   } catch (error) {
     statusMessage.value = 'Hiba történt a mentés során az Azure-ba.'

@@ -4,7 +4,7 @@ import HomeView from '../views/HomeView.vue'
 import Leltar from '../views/Leltar.vue'
 // @ts-ignore
 import ProjectDetailsView from '../views/ProjectDetailsView.vue'
-
+import NewProductTypeView from '../views/NewProductTypeView.vue'
 
 
 const router = createRouter({
@@ -26,6 +26,12 @@ const router = createRouter({
       path: '/inventory/:id',
       name: 'project-details',
       component: ProjectDetailsView
+    },
+
+    {
+      path: '/add-product-type',
+      name: 'add-product-type',
+      component: NewProductTypeView
     }
 
 
