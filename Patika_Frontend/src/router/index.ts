@@ -24,7 +24,7 @@ const router = createRouter({
 
     {
       path: '/inventory/:id',
-      name: 'project-details',
+      name: 'inventory-details',
       component: ProjectDetailsView
     },
 

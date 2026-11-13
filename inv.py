@@ -94,13 +94,13 @@ class Inv:
                 {
                     "PartId": row.PartId,
                     "Barcode": row.Barcode,
-                    "Name": row.Name,
-                    "Category": row.Category,
-                    "Location": row.Location.strip(),
+                    "Name": row.Name or "",
+                    "Category": row.Category or "",
+                    "Location": row.Location.strip() if row.Location else "Raktár",
                     "ExpiryDate": row.ExpiryDate,
                     "ProductId": row.ProductId,
-                    "ProductName": row.ProductName,
-                    "Quantity": row.Quantity,
+                    "ProductName": row.ProductName or "",
+                    "Quantity": row.Quantity if row.Quantity is not None else 0,
                 }
                 for row in cn.cursor().execute(sql, params)
             ]
@@ -123,13 +123,14 @@ class Inv:
                 stock.T_db AS Quantity,
                 product.T_marka AS Brand,
                 product.T_veny AS IsPrescription,
-                product.T_leiras AS Description
+                product.T_leiras AS Description,
+                product.T_hatoanyag AS ActiveIngredient
             FROM dbo.[Konkrét termék] AS stock
             INNER JOIN dbo.[Termék jellemzők] AS product ON product.T_ID = stock.T_ID
             WHERE stock.T_kod IN ({placeholders})
         """
         with self.get_connection() as cn:
-            results = []  # <-- Itt lett javítva a hiányzó zárójel!
+            results = []
             cursor = cn.cursor()
             for row in cursor.execute(sql, batch_codes):
                 results.append({
@@ -137,13 +138,14 @@ class Inv:
                     "Barcode": row.Barcode,
                     "Name": row.Name,
                     "Category": row.Category,
-                    "Location": row.Location.strip(),
+                    "Location": row.Location.strip() if row.Location else "Raktár",
                     "ExpiryDate": row.ExpiryDate,
                     "ProductId": row.ProductId,
                     "Quantity": row.Quantity,
                     "Brand": row.Brand.strip() if row.Brand else "Ismeretlen gyártó",
                     "IsPrescription": bool(row.IsPrescription),
-                    "Description": row.Description.strip() if row.Description else "Nincs leírás feltöltve ehhez a termékhez."
+                    "Description": row.Description.strip() if row.Description else "Nincs leírás feltöltve ehhez a termékhez.",
+                    "ActiveIngredient": row.ActiveIngredient.strip() if row.ActiveIngredient else "Nincs megadva"
                 })
             return results
 
@@ -351,7 +353,44 @@ def add_part():
         words = name.split()
         brand = words[0] if words else "Ismeretlen"
 
-        # ATOMBIZTOS MEGOLDÁS OUTPUT-TAL: Egyetlen lépésben szúr be és adja vissza az új ID-t!
+        # ÚJ RÉSZ: Ha nincs megadva vonalkód (az új legördülős bevételező űrlapról jön),
+        # akkor a meglévő katalógusból keresi ki a terméket és csak készletet szúr be.
+        if not barcode:
+            if not name:
+                return jsonify({"error": "A gyógyszer nevének kiválasztása kötelező!"}), 400
+            if quantity < 1:
+                return jsonify({"error": "A mennyiségnek legalább 1-nek kell lennie!"}), 400
+
+            with service.get_connection() as cn:
+                cursor = cn.cursor()
+                cursor.execute(
+                    "SELECT TOP 1 T_ID FROM dbo.[Termék jellemzők] WHERE T_nev = ?",
+                    (name,)
+                )
+                row = cursor.fetchone()
+                if not row:
+                    return jsonify({"error": "A kiválasztott gyógyszer nem található a katalógusban!"}), 404
+
+                product_id = int(row[0])
+                import time
+                batch_code = f"K{int(time.time() * 1000)}"[-12:]
+
+                cursor.execute(
+                    """
+                    INSERT INTO dbo.[Konkrét termék](T_kod, T_ID, T_lejaratdatum, T_db)
+                    VALUES(?, ?, ?, ?)
+                    """,
+                    (batch_code, product_id, date.fromisoformat(expiry_str), quantity)
+                )
+                cn.commit()
+
+            return jsonify({
+                "message": "Sikeres bevételezés a raktárba!",
+                "ProductId": product_id,
+                "BatchCode": batch_code
+            }), 201
+
+        # A TE EREDETI RÉGI KÓDOD (változatlanul hagyva, ha vonalkóddal érkezik kérés):
         sql_jellemzo = """
             INSERT INTO dbo.[Termék jellemzők](T_marka, T_nev, T_hatoanyag, T_kateg, T_veny, T_mennyiseg, T_mertekegyseg, T_leiras, T_sor, T_polc)
             OUTPUT INSERTED.T_ID
@@ -388,6 +427,7 @@ def add_part():
 
 
 
+
 @app.route('/api/parts/<id>', methods=['GET'])
 def get_part_by_id(id):
     try:
@@ -420,6 +460,29 @@ from invfo import InvFo
 def get_top_categories():
     inv_fo = InvFo()
     return inv_fo.load_top_categories()
+
+@app.route('/api/product-types', methods=['GET'])
+def get_product_types():
+    try:
+        sql = """
+            SELECT T_ID AS id, T_nev AS name, T_kateg AS category
+            FROM dbo.[Termék jellemzők]
+            ORDER BY T_nev
+        """
+        with service.get_connection() as cn:
+            cursor = cn.cursor()
+            results = [
+                {
+                    "id": row.id,
+                    "name": row.name.strip(),
+                    "category": row.category.strip() if row.category else ""
+                }
+                for row in cursor.execute(sql)
+            ]
+        return jsonify(results)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 
 
 @app.route('/api/top-sold', methods=['GET'])
