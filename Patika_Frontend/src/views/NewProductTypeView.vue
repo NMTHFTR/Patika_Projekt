@@ -56,7 +56,6 @@
             <option value="A polc">A polc</option>
             <option value="B polc">B polc</option>
             <option value="Hűtő">Hűtő</option>
-            <option value="Páncélszekrény">Páncélszekrény</option>
             <option value="Raktár 1">Raktár 1</option>
           </select>
           <span v-if="errors.location" style="color: #ef4444; font-size: 0.85rem;">{{ errors.location }}</span>

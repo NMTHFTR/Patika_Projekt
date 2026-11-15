@@ -8,22 +8,27 @@
       <span>{{ toastMessage }}</span>
     </div>
 
-    <!-- ÚJ TÉTEL BEVÉTELEZÉSE (Módosított, legördülős űrlap) -->
     <div class="panel" style="margin-bottom: 16px">
       <div class="section-title">Új raktári tétel bevételezése</div>
       <table class="grid" style="margin-top: 6px">
         <thead>
           <tr>
-            <th style="width: 25%">Kategória (Típus)</th>
-            <th style="width: 35%">Gyógyszer megnevezése</th>
-            <th style="width: 20%">Lejárati idő</th>
-            <th style="width: 20%">Mennyiség (db)</th>
+            <th style="width: 15%">Vonalkód / Sarzs</th>
+            <th style="width: 15%">Kategória (Típus)</th>
+            <th style="width: 25%">Gyógyszer megnevezése</th>
+
+            <th style="width: 15%">Lejárati idő</th>
+            <th style="width: 15%">Mennyiség (db)</th>
           </tr>
         </thead>
         <tbody>
           <tr>
             <td>
-              <select v-model="newItem.category" @change="newItem.name = ''" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--line); background-color: var(--bg); color: var(--text);">
+              <input type="text" v-model="newItem.barcode" placeholder="Szkennelj..." class="form-control-custom" style="width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--line); color: var(--text); background-color: var(--bg);" />
+            </td>
+            <td>
+              <!-- Ha kategóriát váltunk, nullázzuk a nevet és a tárolót is -->
+              <select v-model="newItem.category" @change="newItem.name = ''; newItem.location = ''" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--line); background-color: var(--bg); color: var(--text);">
                 <option value="" disabled>Válassz kategóriát...</option>
                 <option v-for="category in categories" :key="category" :value="category">
                   {{ category }}
@@ -31,25 +36,26 @@
               </select>
             </td>
             <td>
-              <select v-model="newItem.name" :disabled="!newItem.category" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--line); background-color: var(--bg); color: var(--text);">
+              <!-- ÚJ: @change="updateLocation" betölti a polcot a kiválasztás után -->
+              <select v-model="newItem.name" :disabled="!newItem.category" @change="updateLocation" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--line); background-color: var(--bg); color: var(--text);">
                 <option value="" disabled>2. Válassz gyógyszert...</option>
-                <option v-for="prod in filteredProducts" :key="prod.name" :value="prod.name">
-                  {{ prod.name }}
+                <option v-for="prod in filteredProducts" :key="prod.name || prod.Name" :value="prod.name || prod.Name">
+                  {{ prod.name || prod.Name }}
                 </option>
               </select>
             </td>
+
             <td>
-              <!-- :min="today" biztosítja, hogy a naptárban ne lehessen múltbéli napra kattintani -->
-              <input type="date" v-model="newItem.expiry_date" :min="today" class="form-control-custom" style="width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line); color: var(--text); background-color: var(--bg);" />
+              <input type="date" v-model="newItem.expiry_date" :min="today" class="form-control-custom" style="width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--line); color: var(--text); background-color: var(--bg);" />
             </td>
             <td>
-              <input type="number" v-model="newItem.quantity" min="1" class="form-control-custom" style="width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line); color: var(--text); background-color: var(--bg);" />
+              <input type="number" v-model="newItem.quantity" min="1" class="form-control-custom" style="width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--line); color: var(--text); background-color: var(--bg);" />
             </td>
           </tr>
         </tbody>
       </table>
       <div style="display: flex; gap: 8px; margin-top: 10px; align-items: center;">
-        <button class="btn success" @click="addNewItem">Bevételezés</button>
+        <button class="btn success" @click="addNewItem">Rendelés</button>
         <button class="btn warn" @click="clearNewItem">Mezők ürítése</button>
         <span class="msg" style="margin-left: 10px; font-weight: bold;" :style="{ color: isError ? '#ef4444' : '#22c55e' }">
           {{ statusMessage }}
@@ -195,23 +201,38 @@ const searchQuery = ref('')
 const filterCategory = ref('')
 const filterStatus = ref('')
 
-// A mai dátum kiszámítása az alapértelmezett értékhez és a minimumhoz (ÉÉÉÉ-HH-NN)
 const today = new Date().toISOString().split('T')[0]
 
-// A módosított űrlap adatai
-const newItem = ref({ category: '', name: '', expiry_date: today, quantity: 1 })
+const newItem = ref({ barcode: '', category: '', name: '', location: '', expiry_date: today, quantity: 1 })
 const statusMessage = ref('')
 const isError = ref(false)
 
-// A katalógusból betöltött összes gyógyszertípus
 const productTypes = ref([])
 const categories = ref([])
 
-// Automatikusan szűri a gyógyszereket a kiválasztott kategória alapján
 const filteredProducts = computed(() => {
   if (!newItem.value.category) return []
-  return productTypes.value.filter(p => p.category === newItem.value.category)
+  return productTypes.value.filter(p => p.category === newItem.value.category || p.Category === newItem.value.category)
 })
+
+// ÚJ FUNKCIÓ: Kikeresi a kiválasztott gyógyszer tárolóját a katalógusból
+const updateLocation = () => {
+  if (!newItem.value.name) {
+    newItem.value.location = ''
+    return
+  }
+
+  const selectedProduct = filteredProducts.value.find(
+    p => p.name === newItem.value.name || p.Name === newItem.value.name
+  )
+
+  if (selectedProduct) {
+    // Kezeljük a kis- és nagybetűs JSON mezőket is
+    newItem.value.location = selectedProduct.location || selectedProduct.Location || ''
+  } else {
+    newItem.value.location = ''
+  }
+}
 
 const formatDate = (dateStr) => {
   if (!dateStr) return '–'
@@ -251,10 +272,8 @@ const loadCategories = async () => {
   }
 }
 
-// ÚJ: A katalógusban lévő gyógyszerek betöltése a legördülőhöz
 const loadProductTypes = async () => {
   try {
-    // Ezt a végpontot majd be kell kötni a backendben (visszaadja a katalógus elemeit)
     const response = await axios.get('http://localhost:8000/api/product-types')
     productTypes.value = response.data
   } catch (error) {
@@ -265,7 +284,7 @@ const loadProductTypes = async () => {
 onMounted(() => {
   loadDataFromBackend()
   loadCategories()
-  loadProductTypes() // Betöltjük a katalógust
+  loadProductTypes()
 })
 
 const toggleAllSelection = (event) => {
@@ -275,34 +294,44 @@ const toggleAllSelection = (event) => {
 const addNewItem = async () => {
   isError.value = false
 
-  // 1. Kötelező mezők ellenőrzése
-  if (!newItem.value.category || !newItem.value.name || !newItem.value.expiry_date || !newItem.value.quantity) {
+  // KIVETTÜK a '!newItem.value.location' feltételt, és átírtuk a hibaüzenetet
+  if (!newItem.value.barcode.trim() || !newItem.value.category || !newItem.value.name || !newItem.value.expiry_date || !newItem.value.quantity) {
     isError.value = true
-    statusMessage.value = 'Minden mező kiválasztása és kitöltése kötelező!'
+    statusMessage.value = 'Minden mező kitöltése kötelező!'
     return
   }
 
-  // 2. Dátum ellenőrzése (nem lehet régebbi a mainál)
   if (newItem.value.expiry_date < today) {
     isError.value = true
     statusMessage.value = 'A lejárati idő nem lehet a mai napnál régebbi!'
     return
   }
 
-  // 3. Mennyiség ellenőrzése
   if (newItem.value.quantity < 1) {
     isError.value = true
     statusMessage.value = 'A mennyiségnek legalább 1-nek kell lennie!'
     return
   }
 
-  try {
+ try {
     statusMessage.value = 'Mentés folyamatban...'
     isError.value = false
 
+    // 1. Megkeressük a pontos gyógyszert a katalógus (legördülő) listából, hogy megkapjuk a belső ID-ját
+    const selectedProduct = filteredProducts.value.find(
+      p => p.name === newItem.value.name || p.Name === newItem.value.name
+    )
+
+    if (!selectedProduct || !selectedProduct.id) {
+      isError.value = true
+      statusMessage.value = 'Hiba: Nem találom a kiválasztott termék azonosítóját (ID)!'
+      return
+    }
+
+    // 2. Pontosan azokat a kulcsokat küldjük, amit a Flask backend vár!
     await axios.post('http://localhost:8000/api/parts', {
-      name: newItem.value.name,
-      category: newItem.value.category,
+      batch_code: newItem.value.barcode,
+      product_id: selectedProduct.id,
       expiry_date: newItem.value.expiry_date,
       quantity: newItem.value.quantity
     })
@@ -321,7 +350,7 @@ const addNewItem = async () => {
 }
 
 const clearNewItem = () => {
-  newItem.value = { category: '', name: '', expiry_date: today, quantity: 1 }
+  newItem.value = { barcode: '', category: '', name: '', location: '', expiry_date: today, quantity: 1 }
   statusMessage.value = ''
   isError.value = false
 }
@@ -411,7 +440,6 @@ const sortedParts = computed(() => {
   })
 })
 
-
 const getExpiryTextClass = (dateStr) => {
   if (!dateStr) return 'expiry-text-green'
 
@@ -427,6 +455,5 @@ const getExpiryTextClass = (dateStr) => {
   if (diffDays <= 30) return 'expiry-text-yellow'
   return 'expiry-text-green'
 }
-
 
 </script>
