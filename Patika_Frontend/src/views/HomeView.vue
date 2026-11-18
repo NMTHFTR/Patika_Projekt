@@ -31,7 +31,7 @@
         <!-- Kétoszlopos fele-fele elrendezés -->
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 16px; margin-top: 16px;">
       
-      <div class="panel">
+      <div class="panel" style="min-width: 0;">
         <div class="section-title" style="margin-bottom: 16px;">Top Kategória Darabszám</div>
         <table class="grid">
           <thead>

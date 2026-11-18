@@ -271,7 +271,7 @@ select:focus {
 
 table.grid {
     width: 100%;
-    min-width: 780px;
+    min-width: 0;
     border-collapse: separate;
     border-spacing: 0;
     overflow: hidden;

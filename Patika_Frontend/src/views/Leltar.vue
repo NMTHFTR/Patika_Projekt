@@ -13,8 +13,8 @@
       <table class="grid" style="margin-top: 6px">
         <thead>
           <tr>
-            <th style="width: 15%">Vonalkód / Sarzs</th>
-            <th style="width: 15%">Kategória (Típus)</th>
+            <th style="width: 15%">Vonalkód (Max. 13 karakter)</th>
+            <th style="width: 15%">Kategória</th>
             <th style="width: 25%">Gyógyszer megnevezése</th>
 
             <th style="width: 15%">Lejárati idő</th>
@@ -24,7 +24,7 @@
         <tbody>
           <tr>
             <td>
-              <input type="text" v-model="newItem.barcode" placeholder="Szkennelj..." class="form-control-custom" style="width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--line); color: var(--text); background-color: var(--bg);" />
+              <input type="text" v-model="newItem.barcode" placeholder="Szkennelj..." class="form-control-custom" maxlength="13" style="width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--line); color: var(--text); background-color: var(--bg);" />
             </td>
             <td>
               <!-- Ha kategóriát váltunk, nullázzuk a nevet és a tárolót is -->
