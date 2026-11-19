@@ -22,6 +22,37 @@
           <span v-if="errors.name" style="color: #ef4444; font-size: 0.85rem;">{{ errors.name }}</span>
         </div>
 
+        <!-- ÚJ: Hatóanyag -->
+        <div style="display: flex; flex-direction: column; gap: 5px;">
+          <label style="color: var(--muted); font-size: 0.9rem;">Hatóanyag</label>
+          <input type="text" v-model="productData.activeIngredient" placeholder="Pl.: Ibuprofen, Metamizol-nátrium..."
+                 :style="{ padding: '12px', borderRadius: '5px', border: errors.activeIngredient ? '1px solid #ef4444' : '1px solid var(--line)', background: 'var(--bg)', color: 'var(--text)' }" />
+          <span v-if="errors.activeIngredient" style="color: #ef4444; font-size: 0.85rem;">{{ errors.activeIngredient }}</span>
+        </div>
+
+         <!-- ÚJ: Kiszerelés (1 doboz tartalma: darabszám + mértékegység) -->
+        <div style="display: flex; flex-direction: column; gap: 5px;">
+          <label style="color: var(--muted); font-size: 0.9rem;">Kiszerelés (1 doboz tartalma)</label>
+          <div style="display: grid; grid-template-columns: 1fr 1.5fr; gap: 10px;">
+            <input type="number" v-model="productData.packSize" min="1" placeholder="Pl.: 20"
+                   :style="{ padding: '12px', borderRadius: '5px', border: errors.packSize ? '1px solid #ef4444' : '1px solid var(--line)', background: 'var(--bg)', color: 'var(--text)', width: '100%' }" />
+            <select v-model="productData.packUnit"
+                    :style="{ padding: '12px', borderRadius: '5px', border: errors.packUnit ? '1px solid #ef4444' : '1px solid var(--line)', background: 'var(--bg)', color: 'var(--text)', width: '100%' }">
+              <option value="" disabled>Mértékegység...</option>
+              <option value="tabletta">tabletta</option>
+              <option value="kapszula">kapszula</option>
+              <option value="tasak">tasak</option>
+              <option value="ampulla">ampulla</option>
+              <option value="ml">ml</option>
+              <option value="g">g</option>
+              <option value="db">db</option>
+            </select>
+          </div>
+          <span v-if="errors.packSize || errors.packUnit" style="color: #ef4444; font-size: 0.85rem;">
+            {{ errors.packSize || errors.packUnit }}
+          </span>
+        </div>
+
         <!-- Kategória -->
         <div style="display: flex; flex-direction: column; gap: 5px;">
           <label style="color: #a0aec0; font-size: 0.9rem;">Kategória</label>
@@ -99,6 +130,9 @@ import axios from 'axios'
 const productData = ref({
   brand: '',
   name: '',
+  activeIngredient: '',
+  packSize: 1,
+  packUnit: 'tabletta',
   category: '',
   prescription: '',
   location: '',
@@ -109,6 +143,9 @@ const productData = ref({
 const errors = ref({
   brand: '',
   name: '',
+  activeIngredient: '',
+  packSize: '',
+  packUnit: '',
   category: '',
   prescription: '',
   location: '',
@@ -132,7 +169,8 @@ const validateForm = () => {
   let isValid = true
 
   // Hibák nullázása
-  errors.value = { brand: '', name: '', category: '', prescription: '', location: '', description: '' }
+  errors.value = { brand: '', name: '', activeIngredient: '', packSize: '', packUnit: '',
+    category: '', prescription: '', location: '', description: '' }
 
   if (!productData.value.brand.trim()) {
     errors.value.brand = 'A márka / gyártó megadása kötelező!'
@@ -141,6 +179,21 @@ const validateForm = () => {
 
   if (!productData.value.name.trim()) {
     errors.value.name = 'A megnevezés megadása kötelező!'
+    isValid = false
+  }
+
+  if (!productData.value.activeIngredient.trim()) {
+    errors.value.activeIngredient = 'A hatóanyag megadása kötelező!'
+    isValid = false
+  }
+
+  if (!productData.value.packSize || productData.value.packSize < 1) {
+    errors.value.packSize = 'Legalább 1-et adj meg!'
+    isValid = false
+  }
+
+  if (!productData.value.packUnit) {
+    errors.value.packUnit = 'Válassz mértékegységet!'
     isValid = false
   }
 
@@ -180,7 +233,10 @@ const submitProductType = async () => {
     statusMessage.value = 'Sikeresen mentve az Azure felhőbe!'
 
     // Űrlap ürítése sikeres mentés után
-    productData.value = { brand: '', name: '', category: '', prescription: '', location: '', description: '' }
+    productData.value = {
+      brand: '', name: '', activeIngredient: '', packSize: 1, packUnit: 'tabletta',
+      category: '', prescription: '', location: '', description: ''
+    }
 
     setTimeout(() => {
       statusMessage.value = ''

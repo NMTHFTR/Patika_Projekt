@@ -342,9 +342,12 @@ def add_product_type():
         data = request.get_json()
         brand = data.get('brand', '').strip()
         name = data.get('name', '').strip()
+        active_ingredient = data.get('activeIngredient', '').strip()
         category = data.get('category', '').strip()
         prescription = data.get('prescription', '').strip()
         location = data.get('location', '').strip()
+        pack_size = int(data.get('packSize', 1))
+        pack_unit = data.get('packUnit', 'db').strip()
         description = data.get('description', '').strip()
 
         is_prescription = 1 if "Vényköteles" in prescription else 0
@@ -354,10 +357,10 @@ def add_product_type():
         sql = """
             INSERT INTO dbo.[Termék jellemzők] 
             (T_marka, T_nev, T_hatoanyag, T_kateg, T_veny, T_mennyiseg, T_mertekegyseg, T_leiras, T_sor, T_polc)
-            VALUES (?, ?, ?, ?, ?, 1, 'db', ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """
         with service.get_connection() as cn:
-            cn.cursor().execute(sql, (brand, name, name, category, is_prescription, description, sor, polc))
+            cn.cursor().execute(sql, (brand, name, active_ingredient, category, is_prescription, pack_size, pack_unit, description, sor, polc))
             cn.commit()
             
         return jsonify({"message": "Sikeresen mentve a katalógusba!"}), 201
