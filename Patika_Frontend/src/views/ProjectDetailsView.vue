@@ -70,7 +70,6 @@
           </div>
         </div>
 
-        <!-- Alsó 2 széles eladási kártya -->
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 8px;">
           <div class="kpi" style="margin: 0; text-align: center; padding: 14px;">
             <div style="font-size: 20px; color: var(--muted); margin-bottom: 4px;">Eladva ebben a hónapban</div>

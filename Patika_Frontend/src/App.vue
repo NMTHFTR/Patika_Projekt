@@ -17,7 +17,6 @@
 
       <div style="display: flex; gap: 20px; align-items: center;">
 
-        <!-- A Sötét/Világos mód kapcsoló gomb -->
         <div class="theme-toggle-container" style="margin-left: 0;">
           <button @click="toggleTheme" class="theme-toggle-btn" :class="{ 'light-active': !isDark }" title="Téma váltása">
             <span class="icon sun">☀️</span>
@@ -26,7 +25,6 @@
           </button>
         </div>
 
-        <!-- JAVÍTOTT KPI Számlálók: Most már pontosan a nagybetűs mezőket olvassák be -->
         <div class="kpis" style="display: flex; gap: 15px; align-items: center;">
           <div class="kpi"><div class="big">{{ kpis.StockCnt || 0 }}</div><div class="sub">Összes doboz</div></div>
           <div class="kpi"><div class="big">{{ kpis.ExpiredBatchCnt || 0 }}</div><div class="sub">Lejárt tételek</div></div>
@@ -66,7 +64,6 @@ const applyTheme = () => {
 
 
 
-// A KPI adatok tárolója nagybetűs kezdőértékekkel
 const kpis = ref({
   StockCnt: 0,
   ExpiredBatchCnt: 0,
@@ -88,7 +85,6 @@ const fetchHeaderKpis = async () => {
 onMounted(() => {
   setTimeout(fetchHeaderKpis, 5)
 
-  // Figyeljük a Leltar.vue jelzését, és azonnal frissítünk
   window.addEventListener('kpis-updated', fetchHeaderKpis)
 
   const savedTheme = localStorage.getItem('theme')

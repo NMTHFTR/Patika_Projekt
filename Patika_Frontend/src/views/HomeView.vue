@@ -1,7 +1,6 @@
 <template>
   <main>
     <div class="panel">
-      <!-- Eszközök (Gyógyszerek) KPI -->
       <div>
         <div class="section-title" style="margin-bottom:16px;">Gyógyszerek</div>
         <div class="kpis">
@@ -28,7 +27,6 @@
       </div>
     </div>
 
-        <!-- Kétoszlopos fele-fele elrendezés -->
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 16px; margin-top: 16px;">
       
       <div class="panel" style="min-width: 0;">
@@ -77,11 +75,9 @@
 </template>
 
 <script setup lang="ts">
-// 1. BE KELL IMPORTÁLNI AZ ONMOUNTED-ET ÉS AZ AXIOS-T!
 import { ref, onMounted } from 'vue'
 import axios from 'axios'
 
-// Ezek most már nem dummy adatok, hanem a valós értékek tárolói lesznek:
 const stats = ref({ all: 0, free: 0, assigned: 0 })
 const projects = ref({ all: 0, active: 0, inactive: 0 })
 
@@ -93,7 +89,6 @@ const topSoldProducts = ref<any[]>([])
 
 onMounted(async () => {
   try {
-    // Párhuzamosítjuk a 3 kérést, így nem várják meg egymást
     const [catResponse, kpiResponse, soldRes] = await Promise.all([
       axios.get('http://localhost:8000/api/top-categories'),
       axios.get('http://localhost:8000/api/kpis'),

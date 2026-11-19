@@ -59,7 +59,7 @@ a:hover {
   font-size: 14px !important;
   font-weight: 600 !important;
   color: #cbd5e1 !important;
-  background-color: #131c31 !important; /* Elkülönülő sötétkék gombháttér */
+  background-color: #131c31 !important;
   border: 1px solid #30435f !important;
   display: inline-block;
   transition: all 0.2s ease;
@@ -71,15 +71,13 @@ a:hover {
   border-color: #60a5fa !important;
 }
 
-/* Az éppen aktív (kiválasztott) oldal gombja */
 .nav-btn.router-link-exact-active {
-  background-color: #2563eb !important; /* Telített, modern kék aktív gomb */
+  background-color: #2563eb !important;
   color: #ffffff !important;
   border-color: #3b82f6 !important;
   box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35) !important;
 }
 
-/* Világos mód (Light Mode) */
 html.light-mode .nav-btn {
   background-color: #ffffff !important;
   color: #475569 !important;
@@ -412,11 +410,10 @@ html.light-mode .tag.red {
   line-height: 1 !important;
 }
 
-/* A csúszka (kis belső kör) */
 .theme-toggle-btn .toggle-slider {
   position: absolute;
   top: 3px;
-  left: 41px; /* Alapértelmezetten jobbra van (Dark Mode - Hold) */
+  left: 41px;
   width: 30px;
   height: 30px;
   border-radius: 50%;
@@ -426,7 +423,6 @@ html.light-mode .tag.red {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* AKTÍV VILÁGOS MÓD ÁLLAPOT (Balra csúszik a gomb és sárga lesz a napnál) */
 .theme-toggle-btn.light-active {
   background-color: #f1f5f9;
   border-color: #cbd5e1;
@@ -434,7 +430,7 @@ html.light-mode .tag.red {
 
 .theme-toggle-btn.light-active .toggle-slider {
   left: 4px;
-  background-color: #eab308; /* Meleg sárga szín a naphoz */
+  background-color: #eab308;
 }
 
 
@@ -516,7 +512,6 @@ html.light-mode select:focus {
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
 }
 
-/* Gombok és kártyák igazítása világos módban */
 html.light-mode .btn {
     background: #ffffff;
     border-color: #cbd5e1;

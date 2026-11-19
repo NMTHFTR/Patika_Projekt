@@ -3,10 +3,8 @@
     <div class="panel" style="margin-top: 16px;">
       <div class="section-title" style="margin-bottom:16px;">Új gyógyszerfajta felvitele a katalógusba</div>
 
-      <!-- CSS Grid a kétoszlopos elrendezéshez (1fr 1fr = fele-fele arányban osztja a helyet) -->
       <form @submit.prevent="submitProductType" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
 
-        <!-- Márka -->
         <div style="display: flex; flex-direction: column; gap: 5px;">
           <label style="color: #a0aec0; font-size: 0.9rem;">Márka / Gyártó</label>
           <input type="text" v-model="productData.brand" placeholder="Pl.: Sanofi, Teva..."
@@ -14,7 +12,6 @@
           <span v-if="errors.brand" style="color: #ef4444; font-size: 0.85rem;">{{ errors.brand }}</span>
         </div>
 
-        <!-- Megnevezés -->
         <div style="display: flex; flex-direction: column; gap: 5px;">
           <label style="color: #a0aec0; font-size: 0.9rem;">Gyógyszer megnevezése</label>
           <input type="text" v-model="productData.name" placeholder="Pl.: Algopyrin 500 mg tabletta"
@@ -22,7 +19,6 @@
           <span v-if="errors.name" style="color: #ef4444; font-size: 0.85rem;">{{ errors.name }}</span>
         </div>
 
-        <!-- ÚJ: Hatóanyag -->
         <div style="display: flex; flex-direction: column; gap: 5px;">
           <label style="color: var(--muted); font-size: 0.9rem;">Hatóanyag</label>
           <input type="text" v-model="productData.activeIngredient" placeholder="Pl.: Ibuprofen, Metamizol-nátrium..."
@@ -30,7 +26,6 @@
           <span v-if="errors.activeIngredient" style="color: #ef4444; font-size: 0.85rem;">{{ errors.activeIngredient }}</span>
         </div>
 
-         <!-- ÚJ: Kiszerelés (1 doboz tartalma: darabszám + mértékegység) -->
         <div style="display: flex; flex-direction: column; gap: 5px;">
           <label style="color: var(--muted); font-size: 0.9rem;">Kiszerelés (1 doboz tartalma)</label>
           <div style="display: grid; grid-template-columns: 1fr 1.5fr; gap: 10px;">
@@ -53,7 +48,6 @@
           </span>
         </div>
 
-        <!-- Kategória -->
         <div style="display: flex; flex-direction: column; gap: 5px;">
           <label style="color: #a0aec0; font-size: 0.9rem;">Kategória</label>
           <select v-model="productData.category"
@@ -66,7 +60,6 @@
           <span v-if="errors.category" style="color: #ef4444; font-size: 0.85rem;">{{ errors.category }}</span>
         </div>
 
-        <!-- Kiadhatóság / Vénynélküliség -->
         <div style="display: flex; flex-direction: column; gap: 5px;">
           <label style="color: #a0aec0; font-size: 0.9rem;">Kiadhatóság</label>
           <select v-model="productData.prescription"
@@ -78,7 +71,6 @@
           <span v-if="errors.prescription" style="color: #ef4444; font-size: 0.85rem;">{{ errors.prescription }}</span>
         </div>
 
-        <!-- Tároló -->
         <div style="display: flex; flex-direction: column; gap: 5px;">
           <label style="color: #a0aec0; font-size: 0.9rem;">Tároló / Polc</label>
           <select v-model="productData.location"
@@ -92,10 +84,8 @@
           <span v-if="errors.location" style="color: #ef4444; font-size: 0.85rem;">{{ errors.location }}</span>
         </div>
 
-        <!-- Üres hely a Grid-ben, hogy a leírás egyedül uralja a következő sort -->
         <div></div>
 
-        <!-- Leírás - MOST MÁR KÖTELEZŐ, hibaüzenettel és dinamikus kerettel -->
         <div style="display: flex; flex-direction: column; gap: 5px; grid-column: span 2;">
           <label style="color: #a0aec0; font-size: 0.9rem;">Leírás / Hatóanyag</label>
           <textarea v-model="productData.description" rows="3" placeholder="Rövid leírás a gyógyszerről és hatóanyagáról..."
@@ -103,7 +93,6 @@
           <span v-if="errors.description" style="color: #ef4444; font-size: 0.85rem;">{{ errors.description }}</span>
         </div>
 
-        <!-- Mentés gomb -->
         <button type="submit"
                 style="grid-column: span 2; margin-top: 10px; padding: 14px; background-color: #10b981; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 1.05rem;">
           Mentés a katalógusba
@@ -111,7 +100,6 @@
 
       </form>
 
-      <!-- Visszajelző üzenet -->
       <div v-if="statusMessage" style="margin-top: 15px; color: #10b981; font-weight: bold; text-align: center; font-size: 1.1rem;">
         {{ statusMessage }}
       </div>
@@ -126,7 +114,6 @@
 import { ref, onMounted } from 'vue'
 import axios from 'axios'
 
-// Űrlap adatai az új mezőkkel kibővítve
 const productData = ref({
   brand: '',
   name: '',
@@ -139,7 +126,6 @@ const productData = ref({
   description: ''
 })
 
-// Helyi validációs hibaüzenetek tárolója (Már a leírás is szerepel benne)
 const errors = ref({
   brand: '',
   name: '',
@@ -164,11 +150,9 @@ onMounted(async () => {
   }
 })
 
-// Helyben történő ellenőrzés (Validáció)
 const validateForm = () => {
   let isValid = true
 
-  // Hibák nullázása
   errors.value = { brand: '', name: '', activeIngredient: '', packSize: '', packUnit: '',
     category: '', prescription: '', location: '', description: '' }
 
@@ -212,7 +196,6 @@ const validateForm = () => {
     isValid = false
   }
 
-  // ÚJ: A leírás ellenőrzése
   if (!productData.value.description.trim()) {
     errors.value.description = 'A leírás / hatóanyag megadása kötelező!'
     isValid = false
@@ -227,12 +210,10 @@ const submitProductType = async () => {
   }
 
   try {
-    // Backend API hívás az összes kibővített adattal
     await axios.post('http://localhost:8000/api/product-types', productData.value)
 
     statusMessage.value = 'Sikeresen mentve az Azure felhőbe!'
 
-    // Űrlap ürítése sikeres mentés után
     productData.value = {
       brand: '', name: '', activeIngredient: '', packSize: 1, packUnit: 'tabletta',
       category: '', prescription: '', location: '', description: ''

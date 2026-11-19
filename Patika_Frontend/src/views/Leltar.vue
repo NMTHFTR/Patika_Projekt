@@ -1,4 +1,3 @@
-<!-- src/views/Leltar.vue -->
 <template>
   <div class="wrap">
     <div
@@ -27,7 +26,6 @@
               <input type="text" v-model="newItem.barcode" placeholder="Szkennelj..." class="form-control-custom" maxlength="13" style="width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--line); color: var(--text); background-color: var(--bg);" />
             </td>
             <td>
-              <!-- Ha kategóriát váltunk, nullázzuk a nevet és a tárolót is -->
               <select v-model="newItem.category" @change="newItem.name = ''; newItem.location = ''" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--line); background-color: var(--bg); color: var(--text);">
                 <option value="" disabled>Válassz kategóriát...</option>
                 <option v-for="category in categories" :key="category" :value="category">
@@ -36,7 +34,6 @@
               </select>
             </td>
             <td>
-              <!-- ÚJ: @change="updateLocation" betölti a polcot a kiválasztás után -->
               <select v-model="newItem.name" :disabled="!newItem.category" @change="updateLocation" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--line); background-color: var(--bg); color: var(--text);">
                 <option value="" disabled>2. Válassz gyógyszert...</option>
                 <option v-for="prod in filteredProducts" :key="prod.name || prod.Name" :value="prod.name || prod.Name">
@@ -63,7 +60,6 @@
       </div>
     </div>
 
-    <!-- Alsó szekció: Keresők és Szűrők -->
     <div class="panel">
       <div class="section-title">Keresés és szűrés</div>
       <div class="filters" style="margin-bottom: 10px">
@@ -92,7 +88,6 @@
         </div>
       </div>
 
-      <!-- Táblázat adatokkal -->
       <table class="grid" style="margin-top: 12px;">
         <thead>
           <tr>
@@ -156,7 +151,6 @@
       </table>
     </div>
 
-    <!-- Eladás Modal -->
     <div v-if="sellModal.isOpen" style="position: fixed; inset: 0; background: rgba(0, 0, 0, 0.7); display: flex; align-items: center; justify-content: center; z-index: 9999;">
       <div class="panel" style="width: 100%; max-width: 420px; padding: 24px; border-radius: 14px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);">
         <div class="section-title" style="font-size: 18px; margin-bottom: 6px;">Termék eladása</div>
@@ -294,7 +288,6 @@ const toggleAllSelection = (event) => {
 const addNewItem = async () => {
   isError.value = false
 
-  // KIVETTÜK a '!newItem.value.location' feltételt, és átírtuk a hibaüzenetet
   if (!newItem.value.barcode.trim() || !newItem.value.category || !newItem.value.name || !newItem.value.expiry_date || !newItem.value.quantity) {
     isError.value = true
     statusMessage.value = 'Minden mező kitöltése kötelező!'
@@ -317,7 +310,6 @@ const addNewItem = async () => {
     statusMessage.value = 'Mentés folyamatban...'
     isError.value = false
 
-    // 1. Megkeressük a pontos gyógyszert a katalógus (legördülő) listából, hogy megkapjuk a belső ID-ját
     const selectedProduct = filteredProducts.value.find(
       p => p.name === newItem.value.name || p.Name === newItem.value.name
     )
@@ -328,7 +320,6 @@ const addNewItem = async () => {
       return
     }
 
-    // 2. Pontosan azokat a kulcsokat küldjük, amit a Flask backend vár!
     await axios.post('http://localhost:8000/api/parts', {
       batch_code: newItem.value.barcode,
       product_id: selectedProduct.id,

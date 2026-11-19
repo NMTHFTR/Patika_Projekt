@@ -309,9 +309,6 @@ class Inv:
         return inserted
 
 
-# ==========================================
-# FLASK ALKALMAZÁS ÉS VÉGPONTOK
-# ==========================================
 
 app = Flask(__name__)
 CORS(app)
@@ -335,7 +332,6 @@ def get_parts():
         return jsonify({"error": str(e)}), 500
 
 
-# 1. ÚJ VÉGPONT: Katalógus bővítése (Új gyógyszerfajta felvitele)
 @app.route('/api/product-types', methods=['POST'])
 def add_product_type():
     try:
@@ -369,7 +365,6 @@ def add_product_type():
         return jsonify({"error": str(e)}), 500
 
 
-# 2. ÚJ VÉGPONT: Leltár bevételezése (Konkrét dobozok rögzítése a polcra)
 @app.route('/api/parts', methods=['POST'])
 def add_part():
     try:

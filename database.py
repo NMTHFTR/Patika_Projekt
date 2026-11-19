@@ -11,7 +11,6 @@ def connect_database(conn_str: Optional[str] = None) -> Any:
     """Connect to the Patika SQL Server database."""
     connection_string = conn_str or os.getenv("PATIKA_DB_CONNECTION_STRING")
     if not connection_string:
-        # A te beállításaid fixen megadva:
         driver = "ODBC Driver 18 for SQL Server"
         server = "tcp:patikaprojekt2.database.windows.net"
         database = "patikaDB"
@@ -20,12 +19,12 @@ def connect_database(conn_str: Optional[str] = None) -> Any:
 
         parts = [
             f"Driver={{{driver}}}",
-            f"Server={server},1433",      # <-- Hozzáadtuk a portot
+            f"Server={server},1433",
             f"Database={database}",
             f"UID={user}",
             f"PWD={password}",
-            "Encrypt=yes",                # <-- Kötelező az Azure felhőhöz
-            "TrustServerCertificate=yes"   # <-- Biztonságos tanúsítványkezelés
+            "Encrypt=yes",
+            "TrustServerCertificate=yes"
         ]
 
         connection_string = ";".join(parts) + ";"
