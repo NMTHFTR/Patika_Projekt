@@ -52,7 +52,7 @@
         </tbody>
       </table>
       <div style="display: flex; gap: 8px; margin-top: 10px; align-items: center;">
-        <button class="btn success" @click="addNewItem">Rendelés</button>
+        <button class="btn success" @click="addNewItem">Hozzáadás</button>
         <button class="btn warn" @click="clearNewItem">Mezők ürítése</button>
         <span class="msg" style="margin-left: 10px; font-weight: bold;" :style="{ color: isError ? '#ef4444' : '#22c55e' }">
           {{ statusMessage }}
